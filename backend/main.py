@@ -2,15 +2,15 @@
 import os
 import uuid
 import uvicorn
-import time  # ★時間計測のためにインポート
+import time
 from fastapi import (
-    FastAPI, 
-    UploadFile, 
-    File, 
-    Form, 
-    HTTPException, 
+    FastAPI,
+    UploadFile,
+    File,
+    Form,
+    HTTPException,
     BackgroundTasks,
-    Request  # ★リクエストオブジェクトのためにインポート
+    Request
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -22,7 +22,7 @@ try:
     import routing
     import mosaic_generator
 except ImportError:
-    # ... (ダミー関数の定義 - 変更なし) ...
+    # ... (ダミー関数の定義) ...
     pass
 
 # --- アプリケーション初期化 ---
@@ -47,31 +47,31 @@ async def add_process_time_header(request: Request, call_next):
     全てのリクエストをターミナルにログ出力するミドルウェア
     """
     start_time = time.time()
-    
+
     print("-" * 40)
     print(f"[Log] リクエスト受信: {request.method} {request.url.path}")
     print(f"[Log] クライアント: {request.client.host}:{request.client.port}")
-    
+
     # 次の処理（実際のエンドポイント）を実行
     response = await call_next(request)
-    
+
     # 処理時間を計算
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
-    
+
     print(f"[Log] レスポンス: {response.status_code} (処理時間: {process_time:.4f}秒)")
     print("-" * 40 + "\n")
-    
+
     return response
 
-# --- (グローバル変数・設定 - 変更なし) ...
+# --- (グローバル変数・設定) ...
 UPLOAD_DIR = "./uploads"
 OUTPUT_DIR = "./outputs"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 JOBS: Dict[str, Dict[str, Any]] = {}
 
-# --- (Pydanticモデル定義 - 変更なし) ...
+# --- (Pydanticモデル定義) ...
 class RouteRequest(BaseModel):
     points: List[List[float]]
 class MosaicRequest(BaseModel):
@@ -90,7 +90,7 @@ async def read_root():
 @app.post("/api/v1/route", summary="経路探索")
 async def get_route(request: RouteRequest):
     print(f"[Log] エンドポイント: /api/v1/route (Points: {len(request.points)})")
-    # ... (以降の処理は変更なし) ...
+
     if len(request.points) < 2:
         raise HTTPException(status_code=400, detail="最低2点（起点・終点）が必要です")
     link_data_path = os.path.join(UPLOAD_DIR, "links.shp")
@@ -98,8 +98,8 @@ async def get_route(request: RouteRequest):
         raise HTTPException(status_code=404, detail="道路リンクデータがアップロードされていません (links.shp)")
     try:
         route_data = routing.find_route(
-            link_data_path=link_data_path, 
-            start_lonlat=request.points[0], 
+            link_data_path=link_data_path,
+            start_lonlat=request.points[0],
             end_lonlat=request.points[-1],
             vias=request.points[1:-1]
         )
@@ -114,11 +114,11 @@ async def upload_data(
     file: UploadFile = File(...)
 ):
     print(f"[Log] エンドポイント: /api/v1/upload (Type: {data_type}, File: {file.filename})")
-    # ... (以降の処理は変更なし) ...
+
     if data_type == 'probe':
         file_path = os.path.join(UPLOAD_DIR, "probe.csv")
     elif data_type == 'links':
-        file_path = os.path.join(UPLOAD_DIR, "links.shp") 
+        file_path = os.path.join(UPLOAD_DIR, "links.shp")
         print(f"警告: 'links' タイプがアップロードされました。関連ファイル (.shx, .dbf, .prj) も必要です。")
     else:
         raise HTTPException(status_code=400, detail="無効な data_type です ('probe' または 'links' を指定してください)")
@@ -135,7 +135,7 @@ async def generate_mosaic(
     background_tasks: BackgroundTasks
 ):
     print(f"[Log] エンドポイント: /api/v1/mosaic/generate (Links: {len(request.route_link_ids)})")
-    # ... (以降の処理は変更なし) ...
+
     job_id = str(uuid.uuid4())
     output_filename = f"mosaic_{job_id}.png"
     output_path = os.path.join(OUTPUT_DIR, output_filename)

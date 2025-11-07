@@ -4,9 +4,6 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  /* color-scheme, color, background-color などを削除 */
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -24,8 +21,6 @@ a:hover {
 
 body {
   margin: 0;
-  /* display: flex; を削除 */
-  /* place-items: center; を削除 */
   min-width: 320px;
   min-height: 100vh;
 }
@@ -42,7 +37,6 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  /* background-color を削除 (ダークモード/ライトモードで競合するため) */
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -54,8 +48,6 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-/* @media (prefers-color-scheme: light) ... を削除しても良いですが、
-   残す場合は :root の color と background-color を削除します */
 @media (prefers-color-scheme: light) {
   :root {
     /* color: #213547; */

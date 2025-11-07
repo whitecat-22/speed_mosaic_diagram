@@ -42,7 +42,7 @@ interface Props {
 
 const MapComponent: React.FC<Props> = ({ baseMapKey, children, onClick }) => {
 
-  // (ロギングは残しておきます)
+  // (ロギングは残しておく)
   console.log(`MapComponent: Render (key: ${baseMapKey})`);
   useEffect(() => {
     console.log(`%cMapComponent: Mounted (key: ${baseMapKey})`, 'color: green;');

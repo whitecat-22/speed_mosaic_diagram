@@ -5,7 +5,7 @@ import { GeoJsonLayer } from '@deck.gl/layers';
 
 // --- CSS ---
 import 'maplibre-gl/dist/maplibre-gl.css';
-import './App.css'; // 修正した App.css をインポート
+import './App.css';
 
 // --- 作成したコンポーネント ---
 import MapComponent from './components/MapComponent';
@@ -67,7 +67,7 @@ function App() {
             zIndex: 1,
             borderRight: '1px solid #ccc',
 
-            // ★修正点: 文字色を暗い色に固定
+            // 文字色を暗い色に固定
             color: '#213547'
          }}
       >
