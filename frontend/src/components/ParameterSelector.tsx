@@ -187,8 +187,8 @@ const datePickerStyles = `
 
   /* 曜日トグルボタン */
   .day-toggle-button {
-    padding: 5px 1px; /* ★ 修正: 6px 2px -> 5px 1px */
-    font-size: 0.85em; /* ★ 修正: 0.9em -> 0.85em */
+    padding: 5px 0px; /* ★ 修正: 5px 1px -> 5px 0px */
+    font-size: 0.8em; /* ★ 修正: 0.85em -> 0.8em */
     border: 1px solid #718096;
     border-radius: 4px;
     cursor: pointer;
@@ -211,13 +211,13 @@ const datePickerStyles = `
   .day-preset-buttons {
     display: flex;
     justify-content: space-between;
-    gap: 3px; /* ★ 修正: 4px -> 3px */
+    gap: 3px;
     margin-top: 5px;
   }
   .day-preset-buttons button {
     flex-grow: 1;
-    font-size: 0.85em; /* ★ 修正: 0.9em -> 0.85em */
-    padding: 4px 1px; /* ★ 修正: 4px 2px -> 4px 1px */
+    font-size: 0.8em; /* ★ 修正: 0.85em -> 0.8em */
+    padding: 4px 0px; /* ★ 修正: 4px 1px -> 4px 0px */
     background-color: #718096;
     color: #ecf0f1;
     border: none;
@@ -337,8 +337,8 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       <div style={{ marginBottom: '15px' }}>
         <label style={{fontSize: '1em'}}>曜日:</label>
 
-        {/* ★ 修正: gap を 3px -> 2px に */}
-        <div style={{ display: 'flex', gap: '2px' }}>
+        {/* ★ 修正: gap を 2px -> 1px に */}
+        <div style={{ display: 'flex', gap: '1px' }}>
           {allDaysOfWeek.map(day => (
             <button
               key={day}
