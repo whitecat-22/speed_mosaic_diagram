@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { LuCalendar } from 'react-icons/lu'; // 1点目: カレンダーアイコンをインポート
+import { LuCalendar } from 'react-icons/lu';
 
 // ホイールピッカーのスタイル (変更なし)
 const pickerStyles = `
@@ -141,10 +141,10 @@ const allDaysOfWeek: DayOfWeek[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'S
 
 // --- DatePicker用のカスタムCSS ---
 const datePickerStyles = `
-  /* 1点目: DatePickerの入力欄をカスタマイズ */
+  /* DatePickerの入力欄をカスタマイズ */
   .custom-datepicker-input {
     position: relative;
-    width: 100%;
+    width: 100%; /* 親の幅に合わせる */
   }
   .custom-datepicker-input input {
     width: 100%;
@@ -162,13 +162,15 @@ const datePickerStyles = `
     color: #666;
     pointer-events: none; /* アイコンはクリック不可にする */
   }
-  /* ------------------------------- */
 
   /* From/To のコンテナ */
   .day-picker-container {
     display: flex;
     gap: 10px;
     margin-bottom: 15px;
+
+    /* ★ 修正点: 中央寄せ */
+    justify-content: center;
   }
 
   /* 曜日トグルボタン (Mon, Tue...) */
@@ -182,12 +184,10 @@ const datePickerStyles = `
     color: #333;
     flex-grow: 1;
     text-align: center;
-
-    /* 3点目: 均等幅にする */
-    flex-basis: 0;
+    flex-basis: 0; /* 均等幅にする */
   }
   .day-toggle-button.selected {
-    background-color: #007bff; /* 選択時の色 */
+    background-color: #007bff;
     color: white;
     border-color: #007bff;
   }
@@ -214,8 +214,7 @@ const datePickerStyles = `
   }
 `;
 
-// 1点目: DatePickerのカスタム入力コンポーネント (アイコン付き)
-// React.forwardRef を使って、DatePickerからの ref を input に渡す
+// DatePickerのカスタム入力コンポーネント (アイコン付き)
 interface CustomInputProps {
   value?: string;
   onClick?: () => void;
@@ -278,7 +277,9 @@ const ParameterSelector: React.FC = () => {
 
       {/* 期間選択 (From / To) */}
       <div className="day-picker-container">
-        <div style={{width: '50%'}}>
+
+        {/* ★ 修正点: 横幅を 50% -> 160px (固定値) に変更 */}
+        <div style={{width: '160px'}}>
           <label htmlFor="date-from" style={{fontSize: '0.9em', color: '#333'}}>From</label>
           <DatePicker
             id="date-from"
@@ -288,12 +289,15 @@ const ParameterSelector: React.FC = () => {
             startDate={startDate}
             endDate={endDate}
             dateFormat="yyyy/MM/dd"
-
-            // 1点目: カスタム入力を適用
             customInput={<CustomDateInput />}
+
+            // ★ 修正点: カレンダーがはみ出さないよう、右揃えで表示
+            popperPlacement="bottom-end"
           />
         </div>
-        <div style={{width: '50%'}}>
+
+        {/* ★ 修正点: 横幅を 50% -> 160px (固定値) に変更 */}
+        <div style={{width: '160px'}}>
           <label htmlFor="date-to" style={{fontSize: '0.9em', color: '#333'}}>To</label>
           <DatePicker
             id="date-to"
@@ -304,17 +308,13 @@ const ParameterSelector: React.FC = () => {
             endDate={endDate}
             minDate={startDate}
             dateFormat="yyyy/MM/dd"
-
-            // 1点目: カスタム入力を適用
             customInput={<CustomDateInput />}
-
-            // 2点目: カレンダーの表示位置を調整
             popperPlacement="bottom-end"
           />
         </div>
       </div>
 
-      {/* 曜日選択 */}
+      {/* 曜日選択 (変更なし) */}
       <div style={{ marginBottom: '15px' }}>
         <label style={{fontSize: '0.9em', color: '#333'}}>Days of the week</label>
         <div style={{ display: 'flex', gap: '5px' }}>
@@ -336,10 +336,9 @@ const ParameterSelector: React.FC = () => {
       </div>
 
 
-      {/* --- 時間帯選択 (ホイールピッカー) --- */}
+      {/* --- 時間帯選択 (ホイールピッカー) (変更なし) --- */}
       <div style={{ margin: '15px 0' }}>
         <h5>対象とする時間帯</h5>
-
         <div className="wheel-picker-container">
             <ScrollPicker
               items={hourOptions}
@@ -356,7 +355,7 @@ const ParameterSelector: React.FC = () => {
       </div>
       {/* --- ----------------------------- --- */}
 
-      {/* --- 集計時間ピッチ (縦並び) --- */}
+      {/* --- 集計時間ピッチ (縦並び) (変更なし) --- */}
       <div style={{ marginTop: '15px' }}>
         <h5>集計時間ピッチ</h5>
         {['15', '30', '60'].map((pitch) => (
