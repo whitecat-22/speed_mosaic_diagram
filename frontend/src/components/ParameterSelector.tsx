@@ -136,7 +136,6 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
 // --- UIの修正 ---
 
 // --- 曜日ボタンの型 ---
-// (日本語ラベルに合わせて 'Mon' -> '月' などに変更したことを想定)
 type DayOfWeek = '月' | '火' | '水' | '木' | '金' | '土' | '日';
 const allDaysOfWeek: DayOfWeek[] = ['月', '火', '水', '木', '金', '土', '日'];
 
@@ -170,9 +169,7 @@ const datePickerStyles = `
     gap: 10px;
     margin-bottom: 15px;
     justify-content: center;
-
-    /* ★ 1点目: 縦位置を中央揃えにする */
-    align-items: center;
+    align-items: center; /* 縦位置を中央揃え */
   }
 
   /* 曜日トグルボタン (Mon, Tue...) */
@@ -210,9 +207,7 @@ const datePickerStyles = `
     border: none;
     border-radius: 4px;
     cursor: pointer;
-
-    /* ★ 2点目: 均等幅にする */
-    flex-basis: 0;
+    flex-basis: 0; /* 均等幅にする */
   }
   .day-preset-buttons button:hover {
     background-color: #d0d0d0;
@@ -245,14 +240,13 @@ const ParameterSelector: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [endDate, setEndDate] = useState<Date | null>(null);
 
-  // (日本語ラベル '月'〜'金' に合わせて修正)
   const [selectedDays, setSelectedDays] = useState<Set<DayOfWeek>>(
     new Set(['月', '火', '水', '木', '金'])
   );
 
   const [timePitch, setTimePitch] = useState<string>('60');
-  const [timeFrom, setTimeFrom] = useState<number>(7);
-  const [timeTo, setTimeTo] = useState<number>(19);
+  const [timeFrom, setTimeFrom] = useState<number>(0);
+  const [timeTo, setTimeTo] = useState<number>(23);
 
   const toggleDay = (day: DayOfWeek) => {
     setSelectedDays(prevDays => {
@@ -263,7 +257,6 @@ const ParameterSelector: React.FC = () => {
     });
   };
 
-  // (日本語ラベル '月'〜'日' に合わせて修正)
   const selectDayPreset = (preset: 'weekdays' | 'weekend' | 'everyday') => {
     if (preset === 'weekdays') { setSelectedDays(new Set(['月', '火', '水', '木', '金'])); }
     else if (preset === 'weekend') { setSelectedDays(new Set(['土', '日'])); }
@@ -280,14 +273,12 @@ const ParameterSelector: React.FC = () => {
       <style>{pickerStyles}</style>
       <style>{datePickerStyles}</style>
 
-      <h4>3. 対象とする日付・時間帯等の選択</h4>
+      <h4>2. 対象とする日付・時間帯等の選択</h4>
 
       {/* 期間選択 (From / To) */}
       <div className="day-picker-container">
 
-        {/* (横幅 160px -> 150px に調整) */}
         <div style={{width: '150px'}}>
-          {/* <label>...</label> (削除されていると想定) */}
           <DatePicker
             id="date-from"
             selected={startDate}
@@ -301,12 +292,9 @@ const ParameterSelector: React.FC = () => {
           />
         </div>
 
-        {/* ★ 1点目: 「～」を追加 */}
         <span>～</span>
 
-        {/* (横幅 160px -> 150px に調整) */}
         <div style={{width: '150px'}}>
-          {/* <label>...</label> (削除されていると想定) */}
           <DatePicker
             id="date-to"
             selected={endDate}
@@ -337,13 +325,11 @@ const ParameterSelector: React.FC = () => {
           ))}
         </div>
         <div className="day-preset-buttons">
-          {/* (日本語ラベルに変更したと想定) */}
           <button onClick={() => selectDayPreset('everyday')}>毎日</button>
           <button onClick={() => selectDayPreset('weekdays')}>平日</button>
           <button onClick={() => selectDayPreset('weekend')}>休日 (土・日)</button>
         </div>
       </div>
-
 
       {/* --- 時間帯選択 (ホイールピッカー) (変更なし) --- */}
       <div style={{ margin: '15px 0' }}>
@@ -364,23 +350,32 @@ const ParameterSelector: React.FC = () => {
       </div>
       {/* --- ----------------------------- --- */}
 
-      {/* --- 集計時間ピッチ (縦並び) (変更なし) --- */}
+      {/* --- ★ 修正点: 集計時間ピッチ (中央揃え) --- */}
       <div style={{ marginTop: '15px' }}>
         <h5>集計時間ピッチ</h5>
-        {['15', '30', '60'].map((pitch) => (
-          <div key={pitch} style={{ padding: '2px 0' }}>
-            <label>
-              <input
-                type="radio"
-                name="pitch"
-                value={pitch}
-                checked={timePitch === pitch}
-                onChange={(e) => setTimePitch(e.target.value)}
-              />
-              {pitch}分
-            </label>
+
+        {/* 1. ラッパーdivで全体を中央揃えにする */}
+        <div style={{ textAlign: 'center' }}>
+          {/* 2. ラジオボタンのブロック。幅をコンテンツに合わせ、
+               テキストは左揃えに戻す */}
+          <div style={{ display: 'inline-block', textAlign: 'left' }}>
+            {['15', '30', '60'].map((pitch) => (
+              <div key={pitch} style={{ padding: '2px 0' }}>
+                <label>
+                  <input
+                    type="radio"
+                    name="pitch"
+                    value={pitch}
+                    checked={timePitch === pitch}
+                    onChange={(e) => setTimePitch(e.target.value)}
+                  />
+                  {pitch}分
+                </label>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
       </div>
       {/* --- ------------------------- --- */}
 
