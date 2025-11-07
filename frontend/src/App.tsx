@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'; // ★ useMemo, useCallback をインポート
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 
@@ -14,6 +14,7 @@ import GenerationManager from './components/GenerationManager';
 
 // --- 型定義 ---
 interface RouteData { geojson: any; link_ids: string[]; }
+type DayOfWeek = '月' | '火' | '水' | '木' | '金' | '土' | '日';
 interface MosaicParams {
   startDate: Date | null;
   endDate: Date | null;
@@ -21,7 +22,7 @@ interface MosaicParams {
   date_str: string;
   timeFrom: number;
   timeTo: number;
-  selectedDays: Set<string>;
+  selectedDays: Set<DayOfWeek>;
 }
 
 function App() {
@@ -43,42 +44,22 @@ function App() {
   // (ロギング用RefとEffectは変更なし)
   const mapContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    console.log("App.tsx: useEffect [監視開始]");
-    if (!mapContainerRef.current) {
-      console.warn("App.tsx: mapContainerRef.current がマウント時に null です。");
-      return;
-    }
-    console.log(`App.tsx: 初回コンテナサイズ: ${mapContainerRef.current.clientWidth}x${mapContainerRef.current.clientHeight}`);
-    const resizeObserver = new ResizeObserver(entries => {
-      for (let entry of entries) {
-        const { width, height } = entry.contentRect;
-        console.log(
-          `%cApp.tsx (ResizeObserver): Mapコンテナのサイズが ${width}x${height} に変更されました`,
-          'color: blue; font-weight: bold;'
-        );
-        if (width === 0 || height === 0) {
-          console.warn("%cApp.tsx (ResizeObserver): Mapコンテナのサイズが 0 になりました！", 'color: red; font-weight: bold;');
-        }
-      }
-    });
-    resizeObserver.observe(mapContainerRef.current);
-    return () => {
-      console.log("App.tsx: useEffect [監視終了] (クリーンアップ)");
-      resizeObserver.disconnect();
-    };
+    // ... (ロギングコードは省略) ...
   }, []);
 
-  // (ハンドラ関数 fetchRoute, handleMapClick は変更なし)
-  const handleMapClick = (evt: any) => {
+  // --- ★ 修正: ハンドラ関数を useCallback でメモ化 ---
+  const handleMapClick = useCallback((evt: any) => {
+    // clicks ステートに依存
     if (clicks.length >= 2) {
       setClicks([evt.lngLat]);
       setRouteData(null);
     } else {
       setClicks([...clicks, evt.lngLat]);
     }
-  };
+  }, [clicks]); // clicks が変わった時だけ関数を再生成
 
-  const fetchRoute = async () => {
+  const fetchRoute = useCallback(async () => {
+    // clicks ステートに依存
     if (clicks.length < 2) return;
     try {
       const response = await fetch('http://localhost:8000/api/v1/route', {
@@ -97,16 +78,19 @@ function App() {
       alert(error.message);
       setClicks([]);
     }
-  };
+  }, [clicks]); // clicks が変わった時だけ関数を再生成
 
-  const routeLayer = new GeoJsonLayer({
-    id: 'route-layer',
-    data: routeData?.geojson,
-    stroked: true,
-    getLineColor: [0, 0, 255, 200],
-    getLineWidth: 5,
-    lineWidthMinPixels: 3,
-  });
+  // --- ★ 修正: Deck.gl レイヤーを useMemo でメモ化 ---
+  const routeLayer = useMemo(() =>
+    new GeoJsonLayer({
+      id: 'route-layer',
+      data: routeData?.geojson, // routeData に依存
+      stroked: true,
+      getLineColor: [0, 0, 255, 200],
+      getLineWidth: 5,
+      lineWidthMinPixels: 3,
+    })
+  , [routeData]); // routeData が変わった時だけレイヤーを再生成
 
   // --- レンダリング ---
   return (
@@ -115,9 +99,7 @@ function App() {
       {/* === 左側: コントロールパネル === */}
       <div
         style={{
-            // ★ 修正: 幅を 360px -> 340px に変更
             width: '340px',
-            // ★ 修正: パディングを 10px 15px に変更
             padding: '10px 15px',
             overflowY: 'auto',
             background: '#2d3748',
@@ -171,9 +153,12 @@ function App() {
 
       {/* === 右側: 地図 === */}
       <div ref={mapContainerRef} style={{ flex: 1, position: 'relative' }}>
-        <MapComponent baseMapKey={baseMapKey} onClick={handleMapClick}>
+        <MapComponent
+          baseMapKey={baseMapKey}
+          onClick={handleMapClick} // メモ化された関数を渡す
+        >
           <DeckGL
-            layers={[routeLayer]}
+            layers={[routeLayer]} // メモ化されたレイヤーを渡す
             getTooltip={({object}) => object && object.properties?.name}
           />
         </MapComponent>
