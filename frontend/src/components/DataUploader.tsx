@@ -34,7 +34,7 @@ const DataUploader: React.FC = () => {
   // それぞれ div で囲み、レイアウトを調整します。
   return (
     <div>
-      <h4>3. データのアップロード</h4>
+      <h4>4. データのアップロード</h4>
 
       {/* --- 自動車プローブデータ --- */}
       <div style={{ marginBottom: '15px', border: '1px solid #ccc', padding: '10px', borderRadius: '8px' }}>

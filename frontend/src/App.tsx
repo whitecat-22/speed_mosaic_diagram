@@ -74,14 +74,14 @@ function App() {
         <h2>速度モザイク図ツール</h2>
 
         <hr />
-        <h4>0. ベース地図レイヤ</h4>
+        <h4>1. ベース地図レイヤ</h4>
         <select value={baseMapKey} onChange={(e) => setBaseMapKey(e.target.value as 'gsi' | 'osm')} style={{width: '100%'}}>
           <option value="gsi">国土地理院地図</option>
           <option value="osm">OpenStreetMap</option>
         </select>
 
         <hr />
-        <h4>1. 対象路線の選択</h4>
+        <h4>2. 対象路線の選択</h4>
         <p>地図上で起点→終点の順に2点クリックしてください。</p>
         <button onClick={fetchRoute} disabled={clicks.length < 2} style={{width: '100%'}}>
           経路探索を実行

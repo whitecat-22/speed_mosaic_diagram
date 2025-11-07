@@ -29,11 +29,11 @@ const GenerationManager: React.FC<Props> = ({ routeData, params }) => {
          }
          throw new Error('ステータス確認に失敗');
       }
-      
+
       const data = await response.json();
-      
+
       let jobStillRunning = false;
-      
+
       setJobs(prevJobs => prevJobs.map(job => {
         if (job.jobId === jobId) {
           if (data.status === 'RUNNING') {
@@ -52,7 +52,7 @@ const GenerationManager: React.FC<Props> = ({ routeData, params }) => {
     } catch (error) {
       console.error("ステータス確認エラー:", error);
       // (エラーハンドリング: e.g., ジョブをFAILEDにする)
-       setJobs(prevJobs => prevJobs.map(job => 
+       setJobs(prevJobs => prevJobs.map(job =>
         job.jobId === jobId ? { ...job, status: 'FAILED' } : job
       ));
     }
@@ -75,23 +75,23 @@ const GenerationManager: React.FC<Props> = ({ routeData, params }) => {
           data_credits: "使用データ: TomTom + OSM" // (仮)
         }),
       });
-      
+
       if (!response.ok) {
          const err = await response.json();
          throw new Error(err.detail || '作成リクエストに失敗しました');
       }
-      
+
       const jobData = await response.json(); // { job_id: "...", status: "RUNNING", filename: "..." }
-      
-      setJobs([...jobs, { 
-        jobId: jobData.job_id, 
-        status: jobData.status, 
-        fileName: jobData.filename 
+
+      setJobs([...jobs, {
+        jobId: jobData.job_id,
+        status: jobData.status,
+        fileName: jobData.filename
       }]);
-      
+
       // ポーリングを開始
       setTimeout(() => checkJobStatus(jobData.job_id), 3000); // 3秒後に初回ステータス確認
-      
+
     } catch (error: any) {
       alert(`作成リクエスト失敗: ${error.message}`);
     }
@@ -99,7 +99,7 @@ const GenerationManager: React.FC<Props> = ({ routeData, params }) => {
 
   return (
     <div>
-      <h4>4. モザイク図の作成</h4>
+      <h4>5. モザイク図の作成</h4>
       <button onClick={handleGenerate} disabled={!routeData} style={{width: '100%'}}>
         モザイク図を作成
       </button>
@@ -107,14 +107,14 @@ const GenerationManager: React.FC<Props> = ({ routeData, params }) => {
       <h5>作成一覧</h5>
       <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
         {jobs.length === 0 && <li style={{fontSize: '0.9em', color: '#666'}}>作成ジョブはありません</li>}
-        
+
         {jobs.map((job) => (
           <li key={job.jobId} style={{ borderBottom: '1px solid #eee', padding: '5px 0' }}>
             <span style={{ fontSize: '0.8em', display: 'block', wordBreak: 'break-all' }}>{job.fileName}</span>
             {job.status === 'RUNNING' && <span style={{ color: 'orange' }}>作成中...</span>}
             {job.status === 'FAILED' && <span style={{ color: 'red' }}>失敗</span>}
             {job.status === 'COMPLETED' && (
-              <a 
+              <a
                 href={`http://localhost:8000/api/v1/mosaic/download/${job.fileName}`}
                 download
                 style={{ color: 'green', fontWeight: 'bold' }}

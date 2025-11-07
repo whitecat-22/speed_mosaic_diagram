@@ -3,7 +3,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { LuCalendar } from 'react-icons/lu';
 
-// ホイールピッカーのスタイル
+// ホイールピッカーのスタイル (変更なし)
 const pickerStyles = `
 .wheel-picker-container {
   display: flex;
@@ -46,7 +46,7 @@ const pickerStyles = `
 }
 `;
 
-// --- ホイールピッカーコンポーネント ---
+// --- ホイールピッカーコンポーネント (変更なし) ---
 interface ScrollPickerProps {
   items: string[];
   value: number;
@@ -136,6 +136,7 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
 // --- UIの修正 ---
 
 // --- 曜日ボタンの型 ---
+// (日本語ラベルに合わせて 'Mon' -> '月' などに変更したことを想定)
 type DayOfWeek = '月' | '火' | '水' | '木' | '金' | '土' | '日';
 const allDaysOfWeek: DayOfWeek[] = ['月', '火', '水', '木', '金', '土', '日'];
 
@@ -168,9 +169,10 @@ const datePickerStyles = `
     display: flex;
     gap: 10px;
     margin-bottom: 15px;
-
-    /* 中央寄せ */
     justify-content: center;
+
+    /* ★ 1点目: 縦位置を中央揃えにする */
+    align-items: center;
   }
 
   /* 曜日トグルボタン (Mon, Tue...) */
@@ -208,6 +210,9 @@ const datePickerStyles = `
     border: none;
     border-radius: 4px;
     cursor: pointer;
+
+    /* ★ 2点目: 均等幅にする */
+    flex-basis: 0;
   }
   .day-preset-buttons button:hover {
     background-color: #d0d0d0;
@@ -240,6 +245,7 @@ const ParameterSelector: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [endDate, setEndDate] = useState<Date | null>(null);
 
+  // (日本語ラベル '月'〜'金' に合わせて修正)
   const [selectedDays, setSelectedDays] = useState<Set<DayOfWeek>>(
     new Set(['月', '火', '水', '木', '金'])
   );
@@ -257,6 +263,7 @@ const ParameterSelector: React.FC = () => {
     });
   };
 
+  // (日本語ラベル '月'〜'日' に合わせて修正)
   const selectDayPreset = (preset: 'weekdays' | 'weekend' | 'everyday') => {
     if (preset === 'weekdays') { setSelectedDays(new Set(['月', '火', '水', '木', '金'])); }
     else if (preset === 'weekend') { setSelectedDays(new Set(['土', '日'])); }
@@ -273,14 +280,14 @@ const ParameterSelector: React.FC = () => {
       <style>{pickerStyles}</style>
       <style>{datePickerStyles}</style>
 
-      <h4>2. 対象とする日付・時間帯等の選択</h4>
+      <h4>3. 対象とする日付・時間帯等の選択</h4>
 
       {/* 期間選択 (From / To) */}
       <div className="day-picker-container">
 
-        {/* 横幅を 50% -> 160px (固定値) に変更 */}
-        <div style={{width: '160px'}}>
-          <label htmlFor="date-from" style={{fontSize: '0.9em', color: '#333'}}>From</label>
+        {/* (横幅 160px -> 150px に調整) */}
+        <div style={{width: '150px'}}>
+          {/* <label>...</label> (削除されていると想定) */}
           <DatePicker
             id="date-from"
             selected={startDate}
@@ -290,15 +297,16 @@ const ParameterSelector: React.FC = () => {
             endDate={endDate}
             dateFormat="yyyy/MM/dd"
             customInput={<CustomDateInput />}
-
-            // カレンダーがはみ出さないよう、右揃えで表示
             popperPlacement="bottom-end"
           />
         </div>
 
-        {/* 横幅を 50% -> 160px (固定値) に変更 */}
-        <div style={{width: '160px'}}>
-          <label htmlFor="date-to" style={{fontSize: '0.9em', color: '#333'}}>To</label>
+        {/* ★ 1点目: 「～」を追加 */}
+        <span>～</span>
+
+        {/* (横幅 160px -> 150px に調整) */}
+        <div style={{width: '150px'}}>
+          {/* <label>...</label> (削除されていると想定) */}
           <DatePicker
             id="date-to"
             selected={endDate}
@@ -316,7 +324,7 @@ const ParameterSelector: React.FC = () => {
 
       {/* 曜日選択 */}
       <div style={{ marginBottom: '15px' }}>
-        <label style={{fontSize: '0.9em', color: '#333'}}>曜日</label>
+        <label style={{fontSize: '0.9em', color: '#333'}}>曜日:</label>
         <div style={{ display: 'flex', gap: '5px' }}>
           {allDaysOfWeek.map(day => (
             <button
@@ -329,14 +337,15 @@ const ParameterSelector: React.FC = () => {
           ))}
         </div>
         <div className="day-preset-buttons">
+          {/* (日本語ラベルに変更したと想定) */}
           <button onClick={() => selectDayPreset('everyday')}>毎日</button>
           <button onClick={() => selectDayPreset('weekdays')}>平日</button>
-          <button onClick={() => selectDayPreset('weekend')}>週末（土・日）</button>
+          <button onClick={() => selectDayPreset('weekend')}>休日 (土・日)</button>
         </div>
       </div>
 
 
-      {/* --- 時間帯選択 (ホイールピッカー) --- */}
+      {/* --- 時間帯選択 (ホイールピッカー) (変更なし) --- */}
       <div style={{ margin: '15px 0' }}>
         <h5>対象とする時間帯</h5>
         <div className="wheel-picker-container">
@@ -355,7 +364,7 @@ const ParameterSelector: React.FC = () => {
       </div>
       {/* --- ----------------------------- --- */}
 
-      {/* --- 集計時間ピッチ (縦並び) --- */}
+      {/* --- 集計時間ピッチ (縦並び) (変更なし) --- */}
       <div style={{ marginTop: '15px' }}>
         <h5>集計時間ピッチ</h5>
         {['15', '30', '60'].map((pitch) => (
