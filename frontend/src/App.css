@@ -1,14 +1,64 @@
-/* App.css */
+/* (既存の #root スタイルなどは削除) */
 
-#root {
-  /* 以下の3行を削除 (またはコメントアウト) */
-  /* max-width: 1280px; */
-  /* margin: 0 auto; */
-  /* padding: 2rem; */
+/* --- ★ 修正: サイドバー用のダークテーマスタイル --- */
 
-  /* text-align: center; も不要であれば削除 */
+.sidebar-container {
+  /* ★ 修正: 基本フォントサイズを 0.9em -> 0.85em に */
+  font-size: 0.85em;
 }
 
+.sidebar-container h4 {
+  border-bottom: 1px solid #4a5568;
+  padding-bottom: 5px;
+  margin-top: 20px;
+  /* (1.1em は親の 0.85em に応じて小さくなる) */
+  font-size: 1.1em;
+}
+
+/* 共通ボタン (経路探索, Upload) */
+.sidebar-container button {
+  background-color: #4a5568;
+  color: #ecf0f1;
+  border: 1px solid #718096;
+  border-radius: 4px;
+  padding: 0.6em 1.2em;
+  /* (0.95em は親の 0.85em に応じて小さくなる) */
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.25s;
+}
+.sidebar-container button:hover {
+  background-color: #718096;
+  border-color: #a0aec0;
+}
+.sidebar-container button:disabled {
+  background-color: #2d3748;
+  color: #718096;
+  cursor: not-allowed;
+  border-color: #4a5568;
+}
+
+/* 共通セレクトボックス (ベース地図) */
+.sidebar-container select {
+  width: 100%;
+  padding: 8px;
+  /* (1em は親の 0.85em に応じて小さくなる) */
+  font-size: 1em;
+  border: 1px solid #718096;
+  border-radius: 4px;
+  background-color: #4a5568;
+  color: #ecf0f1;
+}
+
+/* 共通ラジオボタン (集計時間ピッチ) */
+.sidebar-container input[type="radio"] {
+  accent-color: #a0aec0;
+  margin-right: 5px;
+}
+
+
+/* --- (以下、Viteのロゴ関連のスタイルは変更なし) --- */
 .logo {
   height: 6em;
   padding: 1.5em;

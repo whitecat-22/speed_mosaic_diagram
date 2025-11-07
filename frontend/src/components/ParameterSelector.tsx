@@ -9,41 +9,32 @@ const pickerStyles = `
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 5px; /* From/Toの間隔を狭く */
+  gap: 5px;
 }
 .wheel-picker {
-  height: 36px; /* 36px * 1項目 */
-  width: 100px;
+  height: 36px;
+  width: 85px;
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
-  border: 1px solid #ccc; /* 枠線を wrapper からこちらに移動 */
+  border: 1px solid #718096;
   border-radius: 4px;
+  color: #ecf0f1;
+  background-color: #4a5568;
 
-  /* スクロールバーを隠す (Chrome, Safari, Edge) */
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  /* スクロールバーを隠す (Firefox) */
+  &::-webkit-scrollbar { display: none; }
   scrollbar-width: none;
 }
 .wheel-picker-item {
-  height: 36px; /* 1項目の高さ */
+  height: 36px;
   line-height: 36px;
   text-align: center;
   scroll-snap-align: center;
-  font-size: 1em;
+  font-size: 0.95em;
 }
-.wheel-picker-item.padding {
-  display: none; /* パディングを非表示 */
-}
-.wheel-picker-wrapper {
-  position: relative;
-  height: 36px; /* 1項目分の高さ */
-}
+.wheel-picker-item.padding { display: none; }
+.wheel-picker-wrapper { position: relative; height: 36px; }
 .wheel-picker-wrapper::before,
-.wheel-picker-wrapper::after {
-  display: none;
-}
+.wheel-picker-wrapper::after { display: none; }
 `;
 
 // --- ホイールピッカーコンポーネント (変更なし) ---
@@ -56,6 +47,7 @@ const itemHeight = 36;
 const loopCount = 3;
 
 const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value, onChange }) => {
+  // ... (コンポーネントの実装は変更なし) ...
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const isScrolling = useRef<boolean>(false);
@@ -69,14 +61,12 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
   }, [originalItems]);
   const middleListStartIndex = n;
   const initialScrollTop = (middleListStartIndex + value) * itemHeight;
-
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = initialScrollTop;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
     if (containerRef.current) {
@@ -91,7 +81,6 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
     }
     return () => { if (timeoutId) { clearTimeout(timeoutId); } };
   }, [value, middleListStartIndex]);
-
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (isScrolling.current) return;
     if (scrollTimeout.current) { clearTimeout(scrollTimeout.current); }
@@ -109,12 +98,10 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
       if (normalizedIndex !== value) { onChange(normalizedIndex); }
     }, 150);
   };
-
   useEffect(() => {
     const currentScrollTimeout = scrollTimeout.current;
     return () => { if (currentScrollTimeout) { clearTimeout(currentScrollTimeout); } };
   }, []);
-
   return (
     <div className="wheel-picker-wrapper">
       <div
@@ -134,23 +121,19 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
 
 
 // --- UIの修正 ---
-
-// --- 曜日ボタンの型 ---
 type DayOfWeek = '月' | '火' | '水' | '木' | '金' | '土' | '日';
 const allDaysOfWeek: DayOfWeek[] = ['月', '火', '水', '木', '金', '土', '日'];
 
-// --- DatePicker用のカスタムCSS ---
+// --- ★ 修正: DatePicker用のダークテーマCSS (gap/padding調整) ---
 const datePickerStyles = `
-  /* DatePickerの入力欄をカスタマイズ */
-  .custom-datepicker-input {
-    position: relative;
-    width: 100%; /* 親の幅に合わせる */
-  }
+  /* DatePickerの入力欄 (変更なし) */
   .custom-datepicker-input input {
+    background-color: #4a5568;
+    color: #ecf0f1;
+    border: 1px solid #718096;
     width: 100%;
-    padding: 8px 30px 8px 10px; /* アイコン分の右パディング */
-    font-size: 1em;
-    border: 1px solid #ccc;
+    padding: 8px 30px 8px 10px;
+    font-size: 0.95em;
     border-radius: 4px;
     box-sizing: border-box;
   }
@@ -159,75 +142,101 @@ const datePickerStyles = `
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    color: #666;
-    pointer-events: none; /* アイコンはクリック不可にする */
+    color: #a0aec0;
+    pointer-events: none;
   }
 
-  /* From/To のコンテナ */
+  /* カレンダーのポップアップ (変更なし) */
+  .react-datepicker {
+    font-size: 0.95em;
+    background-color: #2d3748;
+    border: 1px solid #4a5568;
+    color: #ecf0f1;
+  }
+  .react-datepicker__header {
+    background-color: #4a5568;
+    border-bottom: 1px solid #718096;
+  }
+  .react-datepicker__current-month,
+  .react-datepicker__day-name,
+  .react-datepicker__day {
+    color: #ecf0f1;
+  }
+  .react-datepicker__day:hover {
+    background-color: #718096;
+  }
+  .react-datepicker__day--selected {
+    background-color: #a0aec0;
+    color: #2d3748;
+  }
+  .react-datepicker__day--keyboard-selected {
+    background-color: #718096;
+  }
+  .react-datepicker__navigation-icon::before {
+    border-color: #ecf0f1;
+  }
+
+  /* From/To のコンテナ (変更なし) */
   .day-picker-container {
     display: flex;
-    gap: 10px;
+    gap: 5px;
     margin-bottom: 15px;
     justify-content: center;
-    align-items: center; /* 縦位置を中央揃え */
+    align-items: center;
   }
 
-  /* 曜日トグルボタン (Mon, Tue...) */
+  /* 曜日トグルボタン */
   .day-toggle-button {
-    padding: 8px 0px;
-    font-size: 0.9em;
-    border: 1px solid #ccc;
+    padding: 5px 1px; /* ★ 修正: 6px 2px -> 5px 1px */
+    font-size: 0.85em; /* ★ 修正: 0.9em -> 0.85em */
+    border: 1px solid #718096;
     border-radius: 4px;
     cursor: pointer;
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: #4a5568;
+    color: #ecf0f1;
     flex-grow: 1;
     text-align: center;
-    flex-basis: 0; /* 均等幅にする */
+    flex-basis: 0;
   }
   .day-toggle-button.selected {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
+    background-color: #a0aec0;
+    color: #2d3748;
+    border-color: #a0aec0;
+  }
+  .day-toggle-button:hover:not(.selected) {
+     background-color: #718096;
   }
 
-  /* プリセットボタン (Everyday...) */
+  /* プリセットボタン */
   .day-preset-buttons {
     display: flex;
     justify-content: space-between;
-    gap: 5px;
+    gap: 3px; /* ★ 修正: 4px -> 3px */
     margin-top: 5px;
   }
   .day-preset-buttons button {
     flex-grow: 1;
-    font-size: 0.8em;
-    padding: 5px;
-    background-color: #e0e0e0;
-    color: #444;
+    font-size: 0.85em; /* ★ 修正: 0.9em -> 0.85em */
+    padding: 4px 1px; /* ★ 修正: 4px 2px -> 4px 1px */
+    background-color: #718096;
+    color: #ecf0f1;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    flex-basis: 0; /* 均等幅にする */
+    flex-basis: 0;
   }
   .day-preset-buttons button:hover {
-    background-color: #d0d0d0;
+    background-color: #a0aec0;
+    color: #2d3748;
   }
 `;
 
-// DatePickerのカスタム入力コンポーネント (アイコン付き)
-interface CustomInputProps {
-  value?: string;
-  onClick?: () => void;
-}
+// DatePickerのカスタム入力コンポーネント (変更なし)
+interface CustomInputProps { value?: string; onClick?: () => void; }
 const CustomDateInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
   ({ value, onClick }, ref) => (
     <div className="custom-datepicker-input" onClick={onClick}>
-      <input
-        type="text"
-        value={value}
-        readOnly
-        ref={ref}
-      />
+      <input type="text" value={value} readOnly ref={ref} />
       <LuCalendar className="custom-datepicker-icon" />
     </div>
   )
@@ -235,18 +244,32 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
 CustomDateInput.displayName = 'CustomDateInput';
 
 
-// --- ParameterSelector本体 ---
-const ParameterSelector: React.FC = () => {
-  const [startDate, setStartDate] = useState<Date | null>(new Date());
-  const [endDate, setEndDate] = useState<Date | null>(null);
+// --- (Props と State の受け渡しは変更なし) ---
+interface ParameterSelectorProps {
+  params: {
+    startDate: Date | null;
+    endDate: Date | null;
+    selectedDays: Set<DayOfWeek>;
+    timePitch: string;
+    timeFrom: number;
+    timeTo: number;
+  };
+  setParams: React.Dispatch<React.SetStateAction<any>>;
+}
 
-  const [selectedDays, setSelectedDays] = useState<Set<DayOfWeek>>(
-    new Set(['月', '火', '水', '木', '金'])
-  );
+const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams }) => {
 
-  const [timePitch, setTimePitch] = useState<string>('60');
-  const [timeFrom, setTimeFrom] = useState<number>(0);
-  const [timeTo, setTimeTo] = useState<number>(23);
+  const { startDate, endDate, selectedDays, timePitch, timeFrom, timeTo } = params;
+
+  const setStartDate = (date: Date | null) => setParams(prev => ({...prev, startDate: date}));
+  const setEndDate = (date: Date | null) => setParams(prev => ({...prev, endDate: date}));
+  const setTimePitch = (pitch: string) => setParams(prev => ({...prev, timePitch: pitch}));
+  const setTimeFrom = (from: number) => setParams(prev => ({...prev, timeFrom: from}));
+  const setTimeTo = (to: number) => setParams(prev => ({...prev, timeTo: to}));
+
+  const setSelectedDays = (updater: (prevDays: Set<DayOfWeek>) => Set<DayOfWeek>) => {
+    setParams(prev => ({ ...prev, selectedDays: updater(prev.selectedDays) }));
+  };
 
   const toggleDay = (day: DayOfWeek) => {
     setSelectedDays(prevDays => {
@@ -258,9 +281,9 @@ const ParameterSelector: React.FC = () => {
   };
 
   const selectDayPreset = (preset: 'weekdays' | 'weekend' | 'everyday') => {
-    if (preset === 'weekdays') { setSelectedDays(new Set(['月', '火', '水', '木', '金'])); }
-    else if (preset === 'weekend') { setSelectedDays(new Set(['土', '日'])); }
-    else if (preset === 'everyday') { setSelectedDays(new Set(allDaysOfWeek)); }
+    if (preset === 'weekdays') { setSelectedDays(() => new Set(['月', '火', '水', '木', '金'])); }
+    else if (preset === 'weekend') { setSelectedDays(() => new Set(['土', '日'])); }
+    else if (preset === 'everyday') { setSelectedDays(() => new Set(allDaysOfWeek)); }
   };
 
   const hourOptions = useMemo(() =>
@@ -275,14 +298,14 @@ const ParameterSelector: React.FC = () => {
 
       <h4>2. 対象とする日付・時間帯等の選択</h4>
 
-      {/* 期間選択 (From / To) */}
+      {/* 期間選択 (From / To) (変更なし) */}
       <div className="day-picker-container">
 
-        <div style={{width: '150px'}}>
+        <div style={{width: '120px'}}>
           <DatePicker
             id="date-from"
             selected={startDate}
-            onChange={(date) => setStartDate(date)}
+            onChange={setStartDate}
             selectsStart
             startDate={startDate}
             endDate={endDate}
@@ -294,11 +317,11 @@ const ParameterSelector: React.FC = () => {
 
         <span>～</span>
 
-        <div style={{width: '150px'}}>
+        <div style={{width: '120px'}}>
           <DatePicker
             id="date-to"
             selected={endDate}
-            onChange={(date) => setEndDate(date)}
+            onChange={setEndDate}
             selectsEnd
             startDate={startDate}
             endDate={endDate}
@@ -312,8 +335,10 @@ const ParameterSelector: React.FC = () => {
 
       {/* 曜日選択 */}
       <div style={{ marginBottom: '15px' }}>
-        <label style={{fontSize: '0.9em', color: '#333'}}>曜日:</label>
-        <div style={{ display: 'flex', gap: '5px' }}>
+        <label style={{fontSize: '1em'}}>曜日:</label>
+
+        {/* ★ 修正: gap を 3px -> 2px に */}
+        <div style={{ display: 'flex', gap: '2px' }}>
           {allDaysOfWeek.map(day => (
             <button
               key={day}
@@ -350,14 +375,10 @@ const ParameterSelector: React.FC = () => {
       </div>
       {/* --- ----------------------------- --- */}
 
-      {/* --- ★ 修正点: 集計時間ピッチ (中央揃え) --- */}
+      {/* --- 集計時間ピッチ (中央揃え) (変更なし) --- */}
       <div style={{ marginTop: '15px' }}>
         <h5>集計時間ピッチ</h5>
-
-        {/* 1. ラッパーdivで全体を中央揃えにする */}
         <div style={{ textAlign: 'center' }}>
-          {/* 2. ラジオボタンのブロック。幅をコンテンツに合わせ、
-               テキストは左揃えに戻す */}
           <div style={{ display: 'inline-block', textAlign: 'left' }}>
             {['15', '30', '60'].map((pitch) => (
               <div key={pitch} style={{ padding: '2px 0' }}>
@@ -375,7 +396,6 @@ const ParameterSelector: React.FC = () => {
             ))}
           </div>
         </div>
-
       </div>
       {/* --- ------------------------- --- */}
 
