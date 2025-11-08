@@ -51,6 +51,7 @@ const itemHeight = 36;
 const loopCount = 3;
 
 const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value, onChange }) => {
+  // ... (コンポーネントの実装は変更なし) ...
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const isScrolling = useRef<boolean>(false);
@@ -64,14 +65,12 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
   }, [originalItems]);
   const middleListStartIndex = n;
   const initialScrollTop = (middleListStartIndex + value) * itemHeight;
-
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = initialScrollTop;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
     if (containerRef.current) {
@@ -86,7 +85,6 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
     }
     return () => { if (timeoutId) { clearTimeout(timeoutId); } };
   }, [value, middleListStartIndex]);
-
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (isScrolling.current) return;
     if (scrollTimeout.current) { clearTimeout(scrollTimeout.current); }
@@ -104,12 +102,10 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
       if (normalizedIndex !== value) { onChange(normalizedIndex); }
     }, 150);
   };
-
   useEffect(() => {
     const currentScrollTimeout = scrollTimeout.current;
     return () => { if (currentScrollTimeout) { clearTimeout(currentScrollTimeout); } };
   }, []);
-
   return (
     <div className="wheel-picker-wrapper">
       <div
@@ -429,19 +425,24 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
 
       // しきい値アイテムと新しいアイテムを結合してソートし、最後に topItem を追加する
       const newThresholdItems = [...thresholdItems, newItem].sort((a, b) => a.value - b.value);
-      // const newThresholdItems = [...thresholdItems, newItem]; // ソートは handleLegendChange で行われる
 
       return { ...prev, legend: topItem ? [...newThresholdItems, topItem] : newThresholdItems };
     });
   };
 
   const removeLegendItem = (id: string) => {
-    setParams(prev => ({
-      ...prev,
-      // value: Infinity のアイテムは削除させない
-      // legend: prev.legend.filter(item => item.id !== id && item.value !== Infinity)
-      legend: prev.legend.filter(item => item.id !== id)
-    }));
+    setParams(prev => {
+      // しきい値アイテムが1つより多い場合のみ削除可能
+      const thresholdItems = prev.legend.filter(item => item.value !== Infinity);
+      if (thresholdItems.length <= 1) {
+        return prev; // 最後の1行は削除しない
+      }
+
+      const topItem = prev.legend.find(item => item.value === Infinity);
+      const newThresholdItems = thresholdItems.filter(item => item.id !== id);
+
+      return { ...prev, legend: topItem ? [...newThresholdItems, topItem] : newThresholdItems };
+    });
   };
   // --- ------------------- ---
 
@@ -602,7 +603,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
                 onChange={(color) => handleLegendChange(item.id, 'color', color)}
               />
 
-              {/* しきい値が1個になるのを防ぐため、2つ以上の場合は削除ボタンを表示 */}
+              {/* しきい値が1つより多い場合のみ削除ボタンを表示 */}
               {thresholdItems.length > 1 ? (
                 <LuCircleMinus
                   className="legend-editor-button"

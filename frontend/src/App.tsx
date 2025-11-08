@@ -51,8 +51,8 @@ function App() {
     timePitch: '60',
     date_str: new Date().toISOString().split('T')[0],
 
-    // 凡例 (1項目 + 最上位1項目)
-    // 最初から1行+Infinity行に合わせる
+    // 凡例 (3項目 + 最上位1項目)
+    // value: Infinity を持つアイテムが常に最上位の色となります
     legend: [
       { id: crypto.randomUUID(), value: 20, color: '#FF0000' }, // 0-20
       { id: crypto.randomUUID(), value: 40, color: '#FFFF00' }, // 20-40
