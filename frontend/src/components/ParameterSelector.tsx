@@ -51,7 +51,6 @@ const itemHeight = 36;
 const loopCount = 3;
 
 const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value, onChange }) => {
-  // ... (コンポーネントの実装は変更なし) ...
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const isScrolling = useRef<boolean>(false);
@@ -65,12 +64,14 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
   }, [originalItems]);
   const middleListStartIndex = n;
   const initialScrollTop = (middleListStartIndex + value) * itemHeight;
+
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = initialScrollTop;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
     if (containerRef.current) {
@@ -85,6 +86,7 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
     }
     return () => { if (timeoutId) { clearTimeout(timeoutId); } };
   }, [value, middleListStartIndex]);
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (isScrolling.current) return;
     if (scrollTimeout.current) { clearTimeout(scrollTimeout.current); }
@@ -102,10 +104,12 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
       if (normalizedIndex !== value) { onChange(normalizedIndex); }
     }, 150);
   };
+
   useEffect(() => {
     const currentScrollTimeout = scrollTimeout.current;
     return () => { if (currentScrollTimeout) { clearTimeout(currentScrollTimeout); } };
   }, []);
+
   return (
     <div className="wheel-picker-wrapper">
       <div
@@ -312,7 +316,7 @@ const PopoverColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => 
     onChange(colorResult.hex);
   };
 
-  // ★ 修正: イベントの伝播を止めるハンドラ
+  // イベントの伝播を止めるハンドラ
   const stopPropagation = (e: React.SyntheticEvent) => {
     e.stopPropagation();
   };
@@ -336,7 +340,7 @@ const PopoverColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => 
               left: `${pickerPosition.left}px`,
               zIndex: 10
             }}
-            // ★ 修正: ポップオーバー自体でイベント伝播を停止
+            // ポップオーバー自体でイベント伝播を停止
             onClick={stopPropagation}
             onMouseDown={stopPropagation}
             onTouchStart={stopPropagation}
@@ -381,7 +385,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
     setParams(prev => ({ ...prev, selectedDays: updater(prev.selectedDays) }));
   };
 
-  // --- ★ 修正: 凡例ハンドラ (ソートロジック修正) ---
+  // --- 凡例ハンドラ (ソートロジック修正) ---
   const handleLegendChange = (id: string, field: 'value' | 'color', newValue: string | number) => {
     setParams(prev => {
       const newLegend = prev.legend.map(item =>
@@ -411,17 +415,21 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       // 常に「最上位アイテム」(Infinity) の一つ手前に挿入する
       const thresholdItems = prev.legend.filter(item => item.value !== Infinity);
       const topItem = prev.legend.find(item => item.value === Infinity);
+
+      // 最後の「しきい値」アイテムを取得
       const lastThreshold = thresholdItems.length > 0 ? thresholdItems[thresholdItems.length - 1] : { value: 0 };
 
       const newItem: LegendItem = {
         id: crypto.randomUUID(),
         value: (lastThreshold?.value || 0) + 20,
+        // 新しいアイテムの色は、最後の「しきい値」アイテムの色を引き継ぐ
+        // color: lastThreshold?.color || '#ffffff'
         color: topItem?.color || '#ffffff' // 新しいアイテムの色は、現時点での最上位の色を引き継ぐ
       };
 
-      // しきい値アイテムと新しいアイテムを結合してソートし、
-      // 最後に topItem を追加する
+      // しきい値アイテムと新しいアイテムを結合してソートし、最後に topItem を追加する
       const newThresholdItems = [...thresholdItems, newItem].sort((a, b) => a.value - b.value);
+      // const newThresholdItems = [...thresholdItems, newItem]; // ソートは handleLegendChange で行われる
 
       return { ...prev, legend: topItem ? [...newThresholdItems, topItem] : newThresholdItems };
     });
@@ -431,6 +439,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
     setParams(prev => ({
       ...prev,
       // value: Infinity のアイテムは削除させない
+      // legend: prev.legend.filter(item => item.id !== id && item.value !== Infinity)
       legend: prev.legend.filter(item => item.id !== id)
     }));
   };
@@ -457,7 +466,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
     Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')} 時`)
   , []);
 
-  // --- ★ 修正: 凡例レンダリングロジック ---
+  // --- 凡例レンダリングロジック ---
   // しきい値アイテム (Infinity 以外)
   const thresholdItems = useMemo(() => legend.filter(item => item.value !== Infinity), [legend]);
   // 最上位アイテム (Infinity のもの)
@@ -566,7 +575,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       </div>
       {/* --- ------------------------- --- */}
 
-      {/* --- ★ 修正: 凡例定義 (ロジック分離) --- */}
+      {/* --- 凡例定義 (ロジック分離) --- */}
       <div style={{ marginTop: '15px' }}>
         <h5>凡例定義</h5>
 
@@ -586,15 +595,15 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
                 onChange={(e) => handleLegendChange(item.id, 'value', Number(e.target.value))}
               />
 
-              <span className="legend-editor-label">Km/h</span>
+              <span className="legend-editor-label">km/h</span>
 
               <PopoverColorPicker
                 color={item.color}
                 onChange={(color) => handleLegendChange(item.id, 'color', color)}
               />
 
-              {/* しきい値が1つしかない場合は削除不可 */}
-              {thresholdItems.length > 0 ? ( // 0個になるのを防ぐ
+              {/* しきい値が1個になるのを防ぐため、2つ以上の場合は削除ボタンを表示 */}
+              {thresholdItems.length > 1 ? (
                 <LuCircleMinus
                   className="legend-editor-button"
                   onClick={() => removeLegendItem(item.id)}
@@ -613,7 +622,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
               {thresholdItems.length > 0 ? thresholdItems[thresholdItems.length - 1].value : 0} ~
             </span>
             <div style={{width: '60px'}}></div> {/* スペーサー */}
-            <span className="legend-editor-label">Km/h</span>
+            <span className="legend-editor-label">km/h</span>
 
             <PopoverColorPicker
               color={topItem.color}

@@ -51,8 +51,8 @@ function App() {
     timePitch: '60',
     date_str: new Date().toISOString().split('T')[0],
 
-    // ★ 修正: 凡例 (3項目 + 最上位1項目)
-    // value: Infinity を持つアイテムが常に最上位の色となります
+    // 凡例 (1項目 + 最上位1項目)
+    // 最初から1行+Infinity行に合わせる
     legend: [
       { id: crypto.randomUUID(), value: 20, color: '#FF0000' }, // 0-20
       { id: crypto.randomUUID(), value: 40, color: '#FFFF00' }, // 20-40
@@ -132,18 +132,21 @@ function App() {
     })
   , [routeData]);
 
-  // ★ 修正: getTooltip 関数を useCallback でメモ化 (2点目)
+  // getTooltip 関数を useCallback でメモ化
   const getTooltip = useCallback(({object}: any) => {
     return object && object.properties?.name;
   }, []);
 
-  // ★ 修正: DeckGLコンポーネントを useMemo でメモ化 (2点目)
+  // layers 配列自体を useMemo でメモ化
+  const layers = useMemo(() => [routeLayer], [routeLayer]);
+
+  // DeckGLコンポーネントを useMemo でメモ化
   const deckGLChild = useMemo(() => (
     <DeckGL
-      layers={[routeLayer]}
+      layers={layers} // メモ化された配列を渡す
       getTooltip={getTooltip}
     />
-  ), [routeLayer, getTooltip]); // routeLayer か getTooltip が変わった時だけ再生成
+  ), [layers, getTooltip]);
 
   // --- レンダリング ---
   return (
@@ -208,7 +211,7 @@ function App() {
           baseMapKey={baseMapKey}
           onClick={handleMapClick}
         >
-          {deckGLChild} {/* ★ 修正: メモ化された子要素を渡す */}
+          {deckGLChild} {/* メモ化された子要素を渡す */}
         </MapComponent>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'; // ★ 修正: React をインポート
+import React, { useEffect } from 'react';
 import Map, { NavigationControl } from 'react-map-gl/maplibre';
 import type { MapProps } from 'react-map-gl/maplibre';
 
@@ -81,5 +81,5 @@ const MapComponent: React.FC<Props> = ({ baseMapKey, children, onClick }) => {
   );
 };
 
-// ★ 修正: React.memo でコンポーネントをラップ
+// React.memo でコンポーネントをラップ
 export default React.memo(MapComponent);
