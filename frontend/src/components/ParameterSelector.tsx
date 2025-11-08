@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-// ★ 1. アイコン名を修正
 import { LuCalendar, LuCirclePlus, LuCircleMinus } from 'react-icons/lu';
 import { SketchPicker, ColorResult } from 'react-color';
 
@@ -52,7 +51,6 @@ const itemHeight = 36;
 const loopCount = 3;
 
 const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value, onChange }) => {
-  // ... (コンポーネントの実装は変更なし) ...
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const isScrolling = useRef<boolean>(false);
@@ -66,12 +64,14 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
   }, [originalItems]);
   const middleListStartIndex = n;
   const initialScrollTop = (middleListStartIndex + value) * itemHeight;
+
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = initialScrollTop;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
     if (containerRef.current) {
@@ -86,6 +86,7 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
     }
     return () => { if (timeoutId) { clearTimeout(timeoutId); } };
   }, [value, middleListStartIndex]);
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (isScrolling.current) return;
     if (scrollTimeout.current) { clearTimeout(scrollTimeout.current); }
@@ -103,10 +104,12 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
       if (normalizedIndex !== value) { onChange(normalizedIndex); }
     }, 150);
   };
+
   useEffect(() => {
     const currentScrollTimeout = scrollTimeout.current;
     return () => { if (currentScrollTimeout) { clearTimeout(currentScrollTimeout); } };
   }, []);
+
   return (
     <div className="wheel-picker-wrapper">
       <div
@@ -129,7 +132,7 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
 type DayOfWeek = '月' | '火' | '水' | '木' | '金' | '土' | '日';
 const allDaysOfWeek: DayOfWeek[] = ['月', '火', '水', '木', '金', '土', '日'];
 
-// --- ★ 修正: DatePicker + 凡例エディタ用のCSS ---
+// --- DatePicker + 凡例エディタ用のCSS ---
 const datePickerStyles = `
   /* (DatePicker, 曜日ボタン関連のスタイルは変更なし) */
   .custom-datepicker-input input {
@@ -224,10 +227,10 @@ const datePickerStyles = `
     color: #ecf0f1;
   }
 
-  /* ★ 修正: カラーピッカーのポップオーバースタイル */
+  /* カラーピッカーのポップオーバースタイル */
   .legend-color-picker-popover {
-    /* position: absolute; (削除) */
-    /* z-index: 10; (削除) */
+    /* (position は style 属性で 'fixed' として設定) */
+    z-index: 10;
 
     /* (SketchPickerのデフォルトスタイルをダークテーマ用に上書き) */
     .sketch-picker {
@@ -265,28 +268,46 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
 );
 CustomDateInput.displayName = 'CustomDateInput';
 
-// --- ★ 修正: カラーピッカーコンポーネント (position: fixed) ---
+// --- ★ 修正: カラーピッカーコンポーネント (イベント伝播停止) ---
 interface ColorPickerProps {
   color: string;
   onChange: (color: string) => void;
 }
 const PopoverColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => {
   const [displayColorPicker, setDisplayColorPicker] = useState(false);
-  // ピッカーの位置を保持する state
   const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+  const swatchRef = useRef<HTMLDivElement>(null);
 
   const handleClick = (e: React.MouseEvent) => {
-    // クリックされた要素の画面上の座標を取得
-    const rect = e.currentTarget.getBoundingClientRect();
+    if (displayColorPicker) {
+      setDisplayColorPicker(false);
+      return;
+    }
 
-    // サイドバーの幅 (340px) + パディング (15px) + 余裕 (10px)
-    const leftPosition = rect.right + 10;
+    if (swatchRef.current) {
+      const rect = swatchRef.current.getBoundingClientRect();
+      const pickerHeight = 300; // SketchPickerのおおよその高さ
+      const pickerWidth = 220; // SketchPickerのおおよその幅
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
 
-    setPickerPosition({
-      top: rect.top, // 要素のY座標
-      left: leftPosition // 要素の右側 + 10px
-    });
-    setDisplayColorPicker(!displayColorPicker);
+      let top = rect.top;
+      let left = rect.right + 10;
+
+      // 1点目: 下にはみ出すか？
+      if (rect.top + pickerHeight > viewportHeight) {
+        top = viewportHeight - pickerHeight - 10;
+        if (top < 10) top = 10;
+      }
+
+      // 右にはみ出すか？
+      if (left + pickerWidth > viewportWidth) {
+        left = rect.left - pickerWidth - 10; // 左側に表示
+      }
+
+      setPickerPosition({ top, left });
+      setDisplayColorPicker(true);
+    }
   };
 
   const handleClose = () => {
@@ -297,28 +318,44 @@ const PopoverColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => 
     onChange(colorResult.hex);
   };
 
+  // ★ 修正: イベントの伝播を止めるハンドラ
+  const stopPropagation = (e: React.MouseEvent | React.TouchEvent | React.SyntheticEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div>
       <div
+        ref={swatchRef}
         className="legend-editor-color-swatch"
         style={{ backgroundColor: color }}
-        onClick={handleClick} // e を渡す
+        onClick={handleClick}
       />
       {displayColorPicker ? (
-        // position: fixed と動的な top/left を設定
-        <div
-          className="legend-color-picker-popover"
-          style={{
-            position: 'fixed', // ★ absolute から fixed へ変更
-            top: `${pickerPosition.top}px`,
-            left: `${pickerPosition.left}px`,
-            zIndex: 10
-          }}
-        >
-          {/* 外側クリックで閉じるためのカバー */}
+        <>
+          {/* Sibling 1: The cover (z-index: 9) */}
           <div className="legend-color-picker-cover" onClick={handleClose} />
-          <SketchPicker color={color} onChange={handleChange} />
-        </div>
+
+          {/* Sibling 2: The popover (z-index: 10) */}
+          <div
+            className="legend-color-picker-popover"
+            style={{
+              position: 'fixed',
+              top: `${pickerPosition.top}px`,
+              left: `${pickerPosition.left}px`,
+              zIndex: 10
+            }}
+            // ★ 修正: ポップオーバー自体でイベント伝播を停止
+            onClick={stopPropagation}
+            onMouseDown={stopPropagation}
+            onTouchStart={stopPropagation}
+          >
+            <SketchPicker
+              color={color}
+              onChange={handleChange} // onChangeComplete から onChange に変更
+            />
+          </div>
+        </>
       ) : null}
     </div>
   );
@@ -341,10 +378,8 @@ interface ParameterSelectorProps {
 
 const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams }) => {
 
-  // State を App.tsx から受け取る
   const { startDate, endDate, selectedDays, timePitch, timeFrom, timeTo, legend } = params;
 
-  // 各 State の更新関数
   const setStartDate = (date: Date | null) => setParams(prev => ({...prev, startDate: date}));
   const setEndDate = (date: Date | null) => setParams(prev => ({...prev, endDate: date}));
   const setTimePitch = (pitch: string) => setParams(prev => ({...prev, timePitch: pitch}));
@@ -361,7 +396,6 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       const newLegend = prev.legend.map(item =>
         item.id === id ? { ...item, [field]: newValue } : item
       );
-      // 速度 (value) でソート
       if (field === 'value') {
         newLegend.sort((a, b) => a.value - b.value);
       }
@@ -377,7 +411,9 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
         value: (lastItem?.value || 0) + 20, // 最後の値 + 20
         color: '#ffffff' // デフォルト色
       };
-      return { ...prev, legend: [...prev.legend, newItem] };
+      const newLegend = [...prev.legend, newItem];
+      newLegend.sort((a, b) => a.value - b.value);
+      return { ...prev, legend: newLegend };
     });
   };
 
@@ -399,7 +435,8 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
     });
   };
 
-  const selectDayPreset = (preset: 'weekdays' | 'weekend' | 'everyday') => {
+  const selectDayPreset = (preset: 'weekdays' | 'weekend' | 'everyday')
+: void => {
     if (preset === 'weekdays') { setSelectedDays(() => new Set(['月', '火', '水', '木', '金'])); }
     else if (preset === 'weekend') { setSelectedDays(() => new Set(['土', '日'])); }
     else if (preset === 'everyday') { setSelectedDays(() => new Set(allDaysOfWeek)); }
@@ -521,12 +558,11 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
         <h5>凡例定義</h5>
 
         {legend.map((item, index) => {
-          // 前のアイテムの値（0）
           const prevValue = index === 0 ? 0 : legend[index - 1].value;
 
           return (
             <div key={item.id} className="legend-editor-row">
-              <span style={{width: '30px', textAlign: 'right', fontSize: '0.9em'}}> {/* 幅を調整 */}
+              <span style={{width: '30px', textAlign: 'right', fontSize: '0.9em'}}>
                 {index === 0 ? 0 : prevValue} ~
               </span>
 
@@ -543,9 +579,8 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
                 onChange={(color) => handleLegendChange(item.id, 'color', color)}
               />
 
-              {/* ★ 1. アイコン名を修正 */}
               {legend.length > 1 ? (
-                <LuCircleMinus // ★ 修正: LuMinusCircle -> LuCircleMinus
+                <LuCircleMinus
                   className="legend-editor-button"
                   onClick={() => removeLegendItem(item.id)}
                 />
@@ -563,21 +598,25 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
           </span>
           <div style={{width: '60px'}}></div> {/* スペーサー */}
           <span className="legend-editor-label">Km/h</span>
-          <div
-            className="legend-editor-color-swatch"
-            style={{
-              backgroundColor: legend.length > 0 ? legend[legend.length - 1].color : '#ccc',
-              cursor: 'default',
-              opacity: 0.6
-            }}
-          />
+
+          {legend.length > 0 ? (
+            <PopoverColorPicker
+              color={legend[legend.length - 1].color}
+              onChange={(color) => handleLegendChange(legend[legend.length - 1].id, 'color', color)}
+            />
+          ) : (
+            <div
+              className="legend-editor-color-swatch"
+              style={{ backgroundColor: '#ccc', cursor: 'default', opacity: 0.6 }}
+            />
+          )}
+
           <div style={{width: '1.2em'}}></div> {/* スペーサー */}
         </div>
 
         {/* 追加ボタン */}
         <div style={{ ...styles.flexCenter, marginTop: '10px' }}>
           <button onClick={addLegendItem} style={styles.addButton}>
-            {/* ★ 1. アイコン名を修正 */}
             <LuCirclePlus style={{ marginRight: '5px' }} /> 凡例を追加
           </button>
         </div>
@@ -603,7 +642,6 @@ const styles = {
     backgroundColor: '#4a5568',
     color: '#ecf0f1',
     border: '1px solid #718096',
-    // (App.cssで定義されたbuttonスタイルを継承)
   } as React.CSSProperties,
 };
 
