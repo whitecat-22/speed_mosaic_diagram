@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'; // ★ useMemo, useCallback をインポート
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 
@@ -15,6 +15,15 @@ import GenerationManager from './components/GenerationManager';
 // --- 型定義 ---
 interface RouteData { geojson: any; link_ids: string[]; }
 type DayOfWeek = '月' | '火' | '水' | '木' | '金' | '土' | '日';
+
+// 凡例アイテムの型 (ParameterSelector でインポート)
+export interface LegendItem {
+  id: string; // (uuid)
+  value: number; // 速度のしきい値
+  color: string; // 色 (Hex)
+}
+
+// すべてのパラメータを管理する型
 interface MosaicParams {
   startDate: Date | null;
   endDate: Date | null;
@@ -23,14 +32,16 @@ interface MosaicParams {
   timeFrom: number;
   timeTo: number;
   selectedDays: Set<DayOfWeek>;
+  legend: LegendItem[]; // 凡例
 }
 
 function App() {
-  // (State定義は変更なし)
+  // --- State定義 ---
   const [baseMapKey, setBaseMapKey] = useState<'gsi' | 'osm'>('osm');
   const [clicks, setClicks] = useState<number[][]>([]);
   const [routeData, setRouteData] = useState<RouteData | null>(null);
 
+  // サイドバーの全パラメータを管理する State
   const [mosaicParams, setMosaicParams] = useState<MosaicParams>({
      startDate: new Date(),
      endDate: null,
@@ -39,15 +50,43 @@ function App() {
      timeTo: 23,
      timePitch: '60',
      date_str: new Date().toISOString().split('T')[0],
+     // デフォルトの凡例 (3項目)
+     legend: [
+       { id: crypto.randomUUID(), value: 20, color: '#FF0000' }, // 赤
+       { id: crypto.randomUUID(), value: 40, color: '#FFFF00' }, // 黄
+       { id: crypto.randomUUID(), value: 60, color: '#00FF00' }, // 緑
+     ],
   });
 
-  // (ロギング用RefとEffectは変更なし)
+  // (ロギング用RefとEffect)
   const mapContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    // ... (ロギングコードは省略) ...
+    console.log("App.tsx: useEffect [監視開始]");
+    if (!mapContainerRef.current) {
+      console.warn("App.tsx: mapContainerRef.current がマウント時に null です。");
+      return;
+    }
+    console.log(`App.tsx: 初回コンテナサイズ: ${mapContainerRef.current.clientWidth}x${mapContainerRef.current.clientHeight}`);
+    const resizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        console.log(
+          `%cApp.tsx (ResizeObserver): Mapコンテナのサイズが ${width}x${height} に変更されました`,
+          'color: blue; font-weight: bold;'
+        );
+        if (width === 0 || height === 0) {
+          console.warn("%cApp.tsx (ResizeObserver): Mapコンテナのサイズが 0 になりました！", 'color: red; font-weight: bold;');
+        }
+      }
+    });
+    resizeObserver.observe(mapContainerRef.current);
+    return () => {
+      console.log("App.tsx: useEffect [監視終了] (クリーンアップ)");
+      resizeObserver.disconnect();
+    };
   }, []);
 
-  // --- ★ 修正: ハンドラ関数を useCallback でメモ化 ---
+  // --- ハンドラ関数 (useCallbackでメモ化) ---
   const handleMapClick = useCallback((evt: any) => {
     // clicks ステートに依存
     if (clicks.length >= 2) {
@@ -80,7 +119,7 @@ function App() {
     }
   }, [clicks]); // clicks が変わった時だけ関数を再生成
 
-  // --- ★ 修正: Deck.gl レイヤーを useMemo でメモ化 ---
+  // --- Deck.gl レイヤー (useMemoでメモ化) ---
   const routeLayer = useMemo(() =>
     new GeoJsonLayer({
       id: 'route-layer',
@@ -99,8 +138,8 @@ function App() {
       {/* === 左側: コントロールパネル === */}
       <div
         style={{
-            width: '340px',
-            padding: '10px 15px',
+            width: '340px', // 幅 340px
+            padding: '10px 15px', // パディング
             overflowY: 'auto',
             background: '#2d3748',
             color: '#ecf0f1',
@@ -139,12 +178,12 @@ function App() {
 
         <hr style={{ borderColor: '#4a5568', opacity: 0.5 }} />
 
-        {/* (DataUploader があれば表示) */}
+        {/* DataUploader が存在する場合のみレンダリング */}
         {typeof DataUploader !== 'undefined' && <DataUploader />}
 
         <hr style={{ borderColor: '#4a5568', opacity: 0.5 }} />
 
-        {/* (GenerationManager があれば表示) */}
+        {/* GenerationManager が存在する場合のみレンダリング */}
         {typeof GenerationManager !== 'undefined' && <GenerationManager
           routeData={routeData}
           params={mosaicParams}
@@ -155,10 +194,10 @@ function App() {
       <div ref={mapContainerRef} style={{ flex: 1, position: 'relative' }}>
         <MapComponent
           baseMapKey={baseMapKey}
-          onClick={handleMapClick} // メモ化された関数を渡す
+          onClick={handleMapClick}
         >
           <DeckGL
-            layers={[routeLayer]} // メモ化されたレイヤーを渡す
+            layers={[routeLayer]}
             getTooltip={({object}) => object && object.properties?.name}
           />
         </MapComponent>
