@@ -19,7 +19,7 @@ type DayOfWeek = '月' | '火' | '水' | '木' | '金' | '土' | '日';
 // 凡例アイテムの型 (ParameterSelector でインポート)
 export interface LegendItem {
   id: string; // (uuid)
-  value: number; // 速度のしきい値
+  value: number; // 速度のしきい値 (最上位は Infinity)
   color: string; // 色 (Hex)
 }
 
@@ -43,22 +43,25 @@ function App() {
 
   // サイドバーの全パラメータを管理する State
   const [mosaicParams, setMosaicParams] = useState<MosaicParams>({
-     startDate: new Date(),
-     endDate: null,
-     selectedDays: new Set(['月', '火', '水', '木', '金']),
-     timeFrom: 0,
-     timeTo: 23,
-     timePitch: '60',
-     date_str: new Date().toISOString().split('T')[0],
-     // デフォルトの凡例 (3項目)
-     legend: [
-       { id: crypto.randomUUID(), value: 20, color: '#FF0000' }, // 赤
-       { id: crypto.randomUUID(), value: 40, color: '#FFFF00' }, // 黄
-       { id: crypto.randomUUID(), value: 60, color: '#00FF00' }, // 緑
-     ],
+    startDate: new Date(),
+    endDate: null,
+    selectedDays: new Set(['月', '火', '水', '木', '金']),
+    timeFrom: 0,
+    timeTo: 23,
+    timePitch: '60',
+    date_str: new Date().toISOString().split('T')[0],
+
+    // ★ 修正: 凡例 (3項目 + 最上位1項目)
+    // value: Infinity を持つアイテムが常に最上位の色となります
+    legend: [
+      { id: crypto.randomUUID(), value: 20, color: '#FF0000' }, // 0-20
+      { id: crypto.randomUUID(), value: 40, color: '#FFFF00' }, // 20-40
+      { id: crypto.randomUUID(), value: 60, color: '#00FF00' }, // 40-60
+      { id: crypto.randomUUID(), value: Infinity, color: '#008000' }, // 60~ (最上位)
+    ],
   });
 
-  // (ロギング用RefとEffect)
+  // (ロギング用RefとEffectは変更なし)
   const mapContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     console.log("App.tsx: useEffect [監視開始]");
@@ -86,19 +89,17 @@ function App() {
     };
   }, []);
 
-  // --- ハンドラ関数 (useCallbackでメモ化) ---
+  // (ハンドラ関数 fetchRoute, handleMapClick は変更なし)
   const handleMapClick = useCallback((evt: any) => {
-    // clicks ステートに依存
     if (clicks.length >= 2) {
       setClicks([evt.lngLat]);
       setRouteData(null);
     } else {
       setClicks([...clicks, evt.lngLat]);
     }
-  }, [clicks]); // clicks が変わった時だけ関数を再生成
+  }, [clicks]);
 
   const fetchRoute = useCallback(async () => {
-    // clicks ステートに依存
     if (clicks.length < 2) return;
     try {
       const response = await fetch('http://localhost:8000/api/v1/route', {
@@ -107,8 +108,8 @@ function App() {
         body: JSON.stringify({ points: clicks }),
       });
       if (!response.ok) {
-         const err = await response.json();
-         throw new Error(err.detail || '経路探索に失敗しました');
+        const err = await response.json();
+        throw new Error(err.detail || '経路探索に失敗しました');
       }
       const data: RouteData = await response.json();
       setRouteData(data);
@@ -117,19 +118,32 @@ function App() {
       alert(error.message);
       setClicks([]);
     }
-  }, [clicks]); // clicks が変わった時だけ関数を再生成
+  }, [clicks]);
 
-  // --- Deck.gl レイヤー (useMemoでメモ化) ---
+  // (Deck.gl レイヤーは変更なし)
   const routeLayer = useMemo(() =>
     new GeoJsonLayer({
       id: 'route-layer',
-      data: routeData?.geojson, // routeData に依存
+      data: routeData?.geojson,
       stroked: true,
       getLineColor: [0, 0, 255, 200],
       getLineWidth: 5,
       lineWidthMinPixels: 3,
     })
-  , [routeData]); // routeData が変わった時だけレイヤーを再生成
+  , [routeData]);
+
+  // ★ 修正: getTooltip 関数を useCallback でメモ化 (2点目)
+  const getTooltip = useCallback(({object}: any) => {
+    return object && object.properties?.name;
+  }, []);
+
+  // ★ 修正: DeckGLコンポーネントを useMemo でメモ化 (2点目)
+  const deckGLChild = useMemo(() => (
+    <DeckGL
+      layers={[routeLayer]}
+      getTooltip={getTooltip}
+    />
+  ), [routeLayer, getTooltip]); // routeLayer か getTooltip が変わった時だけ再生成
 
   // --- レンダリング ---
   return (
@@ -138,15 +152,15 @@ function App() {
       {/* === 左側: コントロールパネル === */}
       <div
         style={{
-            width: '340px', // 幅 340px
-            padding: '10px 15px', // パディング
+            width: '340px',
+            padding: '10px 15px',
             overflowY: 'auto',
             background: '#2d3748',
             color: '#ecf0f1',
             zIndex: 1,
             borderRight: '1px solid #4a5568'
-         }}
-         className="sidebar-container"
+        }}
+        className="sidebar-container"
       >
         <h2 style={{ textAlign: 'center', fontSize: '1.7em' }}>速度モザイク図ツール</h2>
 
@@ -178,12 +192,10 @@ function App() {
 
         <hr style={{ borderColor: '#4a5568', opacity: 0.5 }} />
 
-        {/* DataUploader が存在する場合のみレンダリング */}
         {typeof DataUploader !== 'undefined' && <DataUploader />}
 
         <hr style={{ borderColor: '#4a5568', opacity: 0.5 }} />
 
-        {/* GenerationManager が存在する場合のみレンダリング */}
         {typeof GenerationManager !== 'undefined' && <GenerationManager
           routeData={routeData}
           params={mosaicParams}
@@ -196,10 +208,7 @@ function App() {
           baseMapKey={baseMapKey}
           onClick={handleMapClick}
         >
-          <DeckGL
-            layers={[routeLayer]}
-            getTooltip={({object}) => object && object.properties?.name}
-          />
+          {deckGLChild} {/* ★ 修正: メモ化された子要素を渡す */}
         </MapComponent>
       </div>
     </div>

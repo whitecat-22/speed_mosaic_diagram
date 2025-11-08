@@ -21,13 +21,13 @@ const GenerationManager: React.FC<Props> = ({ routeData, params }) => {
     try {
       const response = await fetch(`http://localhost:8000/api/v1/mosaic/status/${jobId}`);
       if (!response.ok) {
-         // 404 Not Found (ジョブがまだ認識されていない) の場合はリトライ
-         if (response.status === 404) {
-           console.warn(`Job ${jobId} not found yet, retrying...`);
-           setTimeout(() => checkJobStatus(jobId), 5000); // 5秒後に再確認
-           return;
-         }
-         throw new Error('ステータス確認に失敗');
+        // 404 Not Found (ジョブがまだ認識されていない) の場合はリトライ
+        if (response.status === 404) {
+          console.warn(`Job ${jobId} not found yet, retrying...`);
+          setTimeout(() => checkJobStatus(jobId), 5000); // 5秒後に再確認
+          return;
+        }
+        throw new Error('ステータス確認に失敗');
       }
 
       const data = await response.json();
@@ -52,7 +52,7 @@ const GenerationManager: React.FC<Props> = ({ routeData, params }) => {
     } catch (error) {
       console.error("ステータス確認エラー:", error);
       // (エラーハンドリング: e.g., ジョブをFAILEDにする)
-       setJobs(prevJobs => prevJobs.map(job =>
+      setJobs(prevJobs => prevJobs.map(job =>
         job.jobId === jobId ? { ...job, status: 'FAILED' } : job
       ));
     }
@@ -77,8 +77,8 @@ const GenerationManager: React.FC<Props> = ({ routeData, params }) => {
       });
 
       if (!response.ok) {
-         const err = await response.json();
-         throw new Error(err.detail || '作成リクエストに失敗しました');
+        const err = await response.json();
+        throw new Error(err.detail || '作成リクエストに失敗しました');
       }
 
       const jobData = await response.json(); // { job_id: "...", status: "RUNNING", filename: "..." }

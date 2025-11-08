@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from 'react'; // ★ 修正: React をインポート
 import Map, { NavigationControl } from 'react-map-gl/maplibre';
 import type { MapProps } from 'react-map-gl/maplibre';
 
@@ -42,7 +42,7 @@ interface Props {
 
 const MapComponent: React.FC<Props> = ({ baseMapKey, children, onClick }) => {
 
-  // (ロギングは残しておく)
+  // (ロギングは残しておきます)
   console.log(`MapComponent: Render (key: ${baseMapKey})`);
   useEffect(() => {
     console.log(`%cMapComponent: Mounted (key: ${baseMapKey})`, 'color: green;');
@@ -63,20 +63,16 @@ const MapComponent: React.FC<Props> = ({ baseMapKey, children, onClick }) => {
       onError={(e) => {
         console.error('%cMapComponent: MapLibreライブラリからエラー', 'background: red; color: white;', e.error);
       }}
-
-      // --- 4点目: マップ操作を明示的に有効にする ---
-      dragPan={true}         // ドラッグによる地図移動 (パン)
-      dragRotate={true}      // Ctrl + ドラッグによる回転
-      scrollZoom={true}      // スクロールによるズーム
-      touchZoom={true}       // タッチデバイスでのズーム
-      touchRotate={true}     // タッチデバイスでの回転
-      doubleClickZoom={true} // ダブルクリックによるズーム
-      // ----------------------------------------
-
+      // マップ操作
+      dragPan={true}
+      dragRotate={true}
+      scrollZoom={true}
+      touchZoom={true}
+      touchRotate={true}
+      doubleClickZoom={true}
     >
       <NavigationControl
         position="top-right"
-        // --- 3点目: 投影画角（チルト）ボタンを表示する ---
         showPitch={true}
       />
 
@@ -85,4 +81,5 @@ const MapComponent: React.FC<Props> = ({ baseMapKey, children, onClick }) => {
   );
 };
 
-export default MapComponent;
+// ★ 修正: React.memo でコンポーネントをラップ
+export default React.memo(MapComponent);
