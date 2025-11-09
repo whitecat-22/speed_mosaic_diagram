@@ -28,7 +28,7 @@ interface MosaicParams {
   // ★ 修正: startDate/endDate を selectedDates に変更
   // startDate: Date | null;
   // endDate: Date | null;
-  selectedDates: Date[]; // ★ 追加
+  selectedDates: Date[]; // ★ 追加 (2点目: 複数日指定)
 
   timePitch: string;
   date_str: string;

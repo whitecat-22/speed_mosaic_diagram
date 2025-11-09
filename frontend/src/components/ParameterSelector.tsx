@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { LuCalendar, LuCirclePlus, LuCircleMinus } from 'react-icons/lu';
+// ★ 修正: LuCalendar は不要になったため削除
+import { LuCirclePlus, LuCircleMinus } from 'react-icons/lu';
 import { SketchPicker, ColorResult } from 'react-color';
 
 // App.tsx から LegendItem 型をインポート
@@ -161,39 +162,78 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
 type DayOfWeek = '月' | '火' | '水' | '木' | '金' | '土' | '日';
 const allDaysOfWeek: DayOfWeek[] = ['月', '火', '水', '木', '金', '土', '日'];
 
-// --- DatePicker + 凡例エディタ用のCSS ---
+// --- ★ 修正: DatePicker + 凡例エディタ用のCSS ---
 const datePickerStyles = `
-  /* (DatePicker, 曜日ボタン関連のスタイルは変更なし) */
-  .custom-datepicker-input input {
-    background-color: #4a5568; color: #ecf0f1; border: 1px solid #718096;
-    width: 100%; padding: 8px 30px 8px 10px; font-size: 0.95em;
-    border-radius: 4px; box-sizing: border-box;
-  }
-  .custom-datepicker-icon {
-    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-    color: #a0aec0; pointer-events: none;
-  }
+  /* (DatePicker入力欄のスタイルは削除) */
+  /* .custom-datepicker-input { ... } */
+  /* .custom-datepicker-icon { ... } */
+
+  /* ★ 修正: インラインカレンダーのスタイル */
+  /* (カレンダーのダークテーマ対応) */
   .react-datepicker {
     font-size: 0.95em;
-    background-color: #2d3748; border: 1px solid #4a5568;
+    background-color: #2d3748; /* 背景色をサイドバーと合わせる */
+    border: none; /* 枠線なし */
     color: #ecf0f1;
+    width: 100%; /* 幅を100%に */
   }
   .react-datepicker__header {
-    background-color: #4a5568; border-bottom: 1px solid #718096;
+    background-color: #2d3748; /* ヘッダー背景 */
+    border-bottom: 1px solid #4a5568;
   }
-  .react-datepicker__current-month, .react-datepicker__day-name, .react-datepicker__day {
+  .react-datepicker__current-month,
+  .react-datepicker__day-name,
+  .react-datepicker__day {
     color: #ecf0f1;
   }
-  .react-datepicker__day:hover { background-color: #718096; }
-  .react-datepicker__day--selected { background-color: #a0aec0; color: #2d3748; }
-  .react-datepicker__day--keyboard-selected { background-color: #718096; }
-  .react-datepicker__navigation-icon::before { border-color: #ecf0f1; }
-  .day-picker-container {
-    display: flex; gap: 5px;
-    margin-bottom: 15px;
-    justify-content: center;
-    align-items: center;
+  /* 曜日ヘッダー */
+  .react-datepicker__day-name {
+    color: #a0aec0; /* 少し薄い色 */
   }
+
+  .react-datepicker__day:hover {
+    background-color: #718096;
+    border-radius: 50%;
+  }
+
+  /* ★ 修正: 選択された日付 (ハイライト) */
+  /* (selectsDatesモードでは selected ではなく highlightedDates を使う) */
+  .react-datepicker__day--highlighted {
+    background-color: #2ecc71; /* 緑色の円 (画像参照) */
+    color: #2d3748;
+    border-radius: 50%;
+    font-weight: bold;
+  }
+  .react-datepicker__day--highlighted:hover {
+    background-color: #27ae60;
+  }
+
+  /* (選択範囲のスタイルは不要) */
+  .react-datepicker__day--selected,
+  .react-datepicker__day--range-start,
+  .react-datepicker__day--range-end,
+  .react-datepicker__day--in-range {
+    background-color: transparent;
+    border-radius: 50%;
+    color: #ecf0f1; /* 文字色を戻す */
+  }
+  /* (highlighted と selected が同時に当たった場合) */
+  .react-datepicker__day--highlighted.react-datepicker__day--selected {
+      background-color: #2ecc71;
+      color: #2d3748;
+  }
+
+  .react-datepicker__day--disabled {
+    color: #718096;
+  }
+  .react-datepicker__navigation-icon::before {
+    border-color: #ecf0f1;
+  }
+
+  /* (From/To のコンテナは不要) */
+  /* .day-picker-container { ... } */
+
+  /* (曜日ボタン関連のスタイルは変更なし) */
   .day-toggle-button {
     padding: 5px 0px;
     font-size: 0.8em;
@@ -218,7 +258,7 @@ const datePickerStyles = `
     background-color: #a0aec0; color: #2d3748;
   }
 
-  /* --- 集計時間ピッチボタン --- */
+  /* (集計時間ピッチボタンは変更なし) */
   .pitch-preset-buttons {
     display: flex;
     justify-content: space-between;
@@ -243,8 +283,6 @@ const datePickerStyles = `
   .pitch-preset-buttons button:hover:not(.selected) {
     background-color: #718096;
   }
-  /* --- --------------------------- --- */
-
 
   /* (凡例エディタのスタイルは変更なし) */
   .legend-editor-row {
@@ -308,19 +346,9 @@ const datePickerStyles = `
   }
 `;
 
-// DatePickerのカスタム入力コンポーネント
-interface CustomInputProps { value?: string; onClick?: () => void; }
-const CustomDateInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
-  ({ value, onClick }, ref) => (
-    <div className="custom-datepicker-input" onClick={onClick}>
-      <input type="text" value={value} readOnly ref={ref} />
-      <LuCalendar className="custom-datepicker-icon" />
-    </div>
-  )
-);
-CustomDateInput.displayName = 'CustomDateInput';
+// (CustomDateInput は削除)
 
-// --- カラーピッカーコンポーネント (イベント伝播停止 修正) ---
+// --- カラーピッカーコンポーネント (変更なし) ---
 interface ColorPickerProps {
   color: string;
   onChange: (color: string) => void;
@@ -331,74 +359,33 @@ const PopoverColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => 
   const swatchRef = useRef<HTMLDivElement>(null);
 
   const handleClick = (e: React.MouseEvent) => {
-    if (displayColorPicker) {
-      setDisplayColorPicker(false);
-      return;
-    }
-
+    if (displayColorPicker) { setDisplayColorPicker(false); return; }
     if (swatchRef.current) {
       const rect = swatchRef.current.getBoundingClientRect();
-      const pickerHeight = 300; // SketchPickerのおおよその高さ
-      const pickerWidth = 220; // SketchPickerのおおよその幅
-      const viewportHeight = window.innerHeight;
-      const viewportWidth = window.innerWidth;
-
-      let top = rect.top;
-      let left = rect.right + 10;
-
-      if (rect.top + pickerHeight > viewportHeight) {
-        top = viewportHeight - pickerHeight - 10;
-        if (top < 10) top = 10;
-      }
-
-      if (left + pickerWidth > viewportWidth) {
-        left = rect.left - pickerWidth - 10;
-      }
-
+      const pickerHeight = 300, pickerWidth = 220;
+      const viewportHeight = window.innerHeight, viewportWidth = window.innerWidth;
+      let top = rect.top, left = rect.right + 10;
+      if (rect.top + pickerHeight > viewportHeight) { top = viewportHeight - pickerHeight - 10; if (top < 10) top = 10; }
+      if (left + pickerWidth > viewportWidth) { left = rect.left - pickerWidth - 10; }
       setPickerPosition({ top, left });
       setDisplayColorPicker(true);
     }
   };
-
-  const handleClose = () => {
-    setDisplayColorPicker(false);
-  };
-
-  const handleChange = (colorResult: ColorResult) => {
-    onChange(colorResult.hex);
-  };
-
-  const stopPropagation = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-  };
-
+  const handleClose = () => { setDisplayColorPicker(false); };
+  const handleChange = (colorResult: ColorResult) => { onChange(colorResult.hex); };
+  const stopPropagation = (e: React.SyntheticEvent) => { e.stopPropagation(); };
   return (
     <div>
-      <div
-        ref={swatchRef}
-        className="legend-editor-color-swatch"
-        style={{ backgroundColor: color }}
-        onClick={handleClick}
-      />
+      <div ref={swatchRef} className="legend-editor-color-swatch" style={{ backgroundColor: color }} onClick={handleClick} />
       {displayColorPicker ? (
         <>
           <div className="legend-color-picker-cover" onClick={handleClose} />
           <div
             className="legend-color-picker-popover"
-            style={{
-              position: 'fixed',
-              top: `${pickerPosition.top}px`,
-              left: `${pickerPosition.left}px`,
-              zIndex: 10
-            }}
-            onClick={stopPropagation}
-            onMouseDown={stopPropagation}
-            onTouchStart={stopPropagation}
+            style={{ position: 'fixed', top: `${pickerPosition.top}px`, left: `${pickerPosition.left}px`, zIndex: 10 }}
+            onClick={stopPropagation} onMouseDown={stopPropagation} onTouchStart={stopPropagation}
           >
-            <SketchPicker
-              color={color}
-              onChange={handleChange}
-            />
+            <SketchPicker color={color} onChange={handleChange} />
           </div>
         </>
       ) : null}
@@ -407,11 +394,12 @@ const PopoverColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => 
 };
 
 
-// --- (Props と State の受け渡しは変更なし) ---
+// --- ★ 修正: ParameterSelector本体 ---
 interface ParameterSelectorProps {
   params: {
-    startDate: Date | null;
-    endDate: Date | null;
+    // startDate: Date | null; (削除)
+    // endDate: Date | null; (削除)
+    selectedDates: Date[]; // ★ 追加
     selectedDays: Set<DayOfWeek>;
     timePitch: string;
     timeFrom: number;
@@ -423,25 +411,54 @@ interface ParameterSelectorProps {
 
 const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams }) => {
 
-  const { startDate, endDate, selectedDays, timePitch, timeFrom, timeTo, legend } = params;
+  const { selectedDates, selectedDays, timePitch, timeFrom, timeTo, legend } = params;
 
-  const setStartDate = (date: Date | null) => setParams(prev => ({...prev, startDate: date}));
-  const setEndDate = (date: Date | null) => setParams(prev => ({...prev, endDate: date}));
+  // ★ 修正: 日付ハンドラ (App.tsxから startDate/endDate を削除したため)
+  // const setStartDate = (date: Date | null) => setParams(prev => ({...prev, startDate: date}));
+  // const setEndDate = (date: Date | null) => setParams(prev => ({...prev, endDate: date}));
+
+  // 複数日選択の onChange ハンドラ
+  const handleDateChange = (date: Date | null) => {
+    if (!date) return;
+
+    setParams(prev => {
+      const newDates = [...prev.selectedDates];
+      const dateStr = date.toDateString();
+
+      // 既に選択されているかチェック
+      const index = newDates.findIndex(d => d.toDateString() === dateStr);
+
+      if (index > -1) {
+        // 既に選択されていれば削除
+        newDates.splice(index, 1);
+      } else {
+        // 選択されていなければ追加
+        newDates.push(date);
+      }
+
+      // 日付順にソート
+      newDates.sort((a, b) => a.getTime() - b.getTime());
+      return { ...prev, selectedDates: newDates };
+    });
+  };
+
+  // 日付オールクリア
+  const clearAllDates = () => {
+    setParams(prev => ({...prev, selectedDates: []}));
+  };
+
+  // (他のハンドラは変更なし)
   const setTimePitch = (pitch: string) => setParams(prev => ({...prev, timePitch: pitch}));
   const setTimeFrom = (from: number) => setParams(prev => ({...prev, timeFrom: from}));
   const setTimeTo = (to: number) => setParams(prev => ({...prev, timeTo: to}));
-
   const setSelectedDays = (updater: (prevDays: Set<DayOfWeek>) => Set<DayOfWeek>) => {
     setParams(prev => ({ ...prev, selectedDays: updater(prev.selectedDays) }));
   };
-
-  // --- 凡例ハンドラ (ソートロジック修正) ---
   const handleLegendChange = (id: string, field: 'value' | 'color', newValue: string | number) => {
     setParams(prev => {
       const newLegend = prev.legend.map(item =>
         item.id === id ? { ...item, [field]: newValue } : item
       );
-
       if (field === 'value' && newValue !== Infinity) {
         const thresholdItems = newLegend.filter(item => item.value !== Infinity)
                                       .sort((a, b) => a.value - b.value);
@@ -451,46 +468,32 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       return { ...prev, legend: newLegend };
     });
   };
-
   const addLegendItem = () => {
     setParams(prev => {
       const thresholdItems = prev.legend.filter(item => item.value !== Infinity);
       const topItem = prev.legend.find(item => item.value === Infinity);
-
       const sortedThresholds = [...thresholdItems].sort((a, b) => a.value - b.value);
       const lastThreshold = sortedThresholds.length > 0 ? sortedThresholds[sortedThresholds.length - 1] : { value: 0 };
-
       const newItem: LegendItem = {
         id: crypto.randomUUID(),
         value: (lastThreshold?.value || 0) + 20,
-        // ★ 3点目: 常に最上位の色を引き継ぐ
         color: topItem?.color || '#ffffff'
       };
-
-      // ★ 2点目: ソートを追加
       const newThresholdItems = [...thresholdItems, newItem].sort((a, b) => a.value - b.value);
-
       return { ...prev, legend: topItem ? [...newThresholdItems, topItem] : newThresholdItems };
     });
   };
-
   const removeLegendItem = (id: string) => {
     setParams(prev => {
       const thresholdItems = prev.legend.filter(item => item.value !== Infinity);
-      // ★ 1点目: しきい値が1つの場合は削除しない
       if (thresholdItems.length <= 1) {
         return prev;
       }
-
       const topItem = prev.legend.find(item => item.value === Infinity);
       const newThresholdItems = thresholdItems.filter(item => item.id !== id);
-
       return { ...prev, legend: topItem ? [...newThresholdItems, topItem] : newThresholdItems };
     });
   };
-  // --- ------------------- ---
-
-
   const toggleDay = (day: DayOfWeek) => {
     setSelectedDays(prevDays => {
       const newDays = new Set(prevDays);
@@ -499,20 +502,14 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       return newDays;
     });
   };
-
-  const selectDayPreset = (preset: 'weekdays' | 'weekend' | 'everyday')
-: void => {
+  const selectDayPreset = (preset: 'weekdays' | 'weekend' | 'everyday') => {
     if (preset === 'weekdays') { setSelectedDays(() => new Set(['月', '火', '水', '木', '金'])); }
     else if (preset === 'weekend') { setSelectedDays(() => new Set(['土', '日'])); }
     else if (preset === 'everyday') { setSelectedDays(() => new Set(allDaysOfWeek)); }
   };
-
-  // ★ 修正: 「時」を削除
   const hourOptions = useMemo(() =>
     Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}`)
   , []);
-
-  // --- 凡例レンダリングロジック ---
   const thresholdItems = useMemo(() => legend.filter(item => item.value !== Infinity), [legend]);
   const topItem = useMemo(() => legend.find(item => item.value === Infinity), [legend]);
 
@@ -524,35 +521,55 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
 
       <h4>2. 対象とする日付・時間帯等の選択</h4>
 
-      {/* 期間選択 (From / To) (変更なし) */}
-      <div className="day-picker-container">
-        <div style={{width: '120px'}}>
-          <DatePicker
-            id="date-from"
-            selected={startDate}
-            onChange={setStartDate}
-            selectsStart
-            startDate={startDate}
-            endDate={endDate}
-            dateFormat="yyyy/MM/dd"
-            customInput={<CustomDateInput />}
-            popperPlacement="bottom-end"
-          />
-        </div>
-        <span>～</span>
-        <div style={{width: '120px'}}>
-          <DatePicker
-            id="date-to"
-            selected={endDate}
-            onChange={setEndDate}
-            selectsEnd
-            startDate={startDate}
-            endDate={endDate}
-            minDate={startDate}
-            dateFormat="yyyy/MM/dd"
-            customInput={<CustomDateInput />}
-            popperPlacement="bottom-end"
-          />
+      {/* ★ 修正: 期間選択 (inlineカレンダーに変更) */}
+      <div style={{ marginBottom: '15px' }}>
+        <h5 style={{ marginBottom: '5px' }}>
+          対象日 <span style={{fontSize: '0.9em', color: '#a0aec0'}}>(複数選択可)</span>
+        </h5>
+
+        <DatePicker
+          onChange={handleDateChange}
+
+          inline // カレンダーを常時表示
+
+          // 選択済みの日にハイライトを適用
+          highlightDates={selectedDates}
+
+          // 選択中の日付 (配列の最初の日付) を月表示のヒントにする
+          selected={selectedDates.length > 0 ? selectedDates[0] : new Date()}
+
+          // 2点目: 期間指定も可能にする (Shiftキー + クリック)
+          // `selectsRange` は `inline` と `highlightDates` を使う手動トグル方式と
+          // 相性が悪いため、`Shift`キーでの期間選択は実装から除外し、
+          // ユーザーが連続した日付をクリックすることで期間指定（複数日指定）とします。
+          // selectsRange={true} // (削除)
+
+          // selected (青い丸) が highlight (緑の丸) を上書きしないようにする
+          dayClassName={date =>
+            selectedDates.find(d => d.toDateString() === date.toDateString())
+              ? 'react-datepicker__day--highlighted'
+              : undefined
+          }
+        />
+
+        {/* 添付画像 (image_63f5a5.png) に合わせたフッター */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px' }}>
+          <span style={{ fontSize: '0.9em', color: '#a0aec0' }}>
+            【指定された日数】 {selectedDates.length} 日分
+          </span>
+          <button
+            onClick={clearAllDates}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#a0aec0',
+              textDecoration: 'underline',
+              fontSize: '0.9em',
+              cursor: 'pointer'
+            }}
+          >
+            日付オールクリア
+          </button>
         </div>
       </div>
 
@@ -621,7 +638,6 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       <div style={{ marginTop: '15px' }}>
         <h5>凡例定義</h5>
 
-        {/* しきい値アイテムのリスト (0-20, 20-40, 40-60 など) */}
         {thresholdItems.map((item, index) => {
           const prevValue = index === 0 ? 0 : thresholdItems[index - 1].value;
 
@@ -637,7 +653,6 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
                 onChange={(e) => handleLegendChange(item.id, 'value', Number(e.target.value))}
               />
 
-              {/* ★ 1点目: "Km/h" -> "km/h" */}
               <span className="legend-editor-label">km/h</span>
 
               <PopoverColorPicker
@@ -645,7 +660,6 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
                 onChange={(color) => handleLegendChange(item.id, 'color', color)}
               />
 
-              {/* ★ 1点目: しきい値が1つより多い場合のみ削除ボタンを表示 */}
               {thresholdItems.length > 1 ? (
                 <LuCircleMinus
                   className="legend-editor-button"
@@ -658,14 +672,12 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
           );
         })}
 
-        {/* 最上位アイテムの行 (60~ など) */}
         {topItem && (
           <div className="legend-editor-row">
             <span style={{width: '30px', textAlign: 'right', fontSize: '0.9em'}}>
               {thresholdItems.length > 0 ? thresholdItems[thresholdItems.length - 1].value : 0} ~
             </span>
 
-            {/* ★ 1点目: しきい値が0個の場合は input を非表示 */}
             <div style={{width: '60px'}}></div>
 
             <span className="legend-editor-label">km/h</span>
@@ -675,7 +687,6 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
               onChange={(color) => handleLegendChange(topItem.id, 'color', color)}
             />
 
-            {/* ★ 1点目: 最後の1行は削除ボタンを表示しない */}
             <div style={{width: '1.2em'}}></div>
           </div>
         )}
