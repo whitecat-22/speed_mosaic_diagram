@@ -7,18 +7,17 @@ import { SketchPicker, ColorResult } from 'react-color';
 // App.tsx から LegendItem 型をインポート
 import type { LegendItem } from '../App';
 
-// ★ 修正: ホイールピッカーのスタイル
+// ホイールピッカーのスタイル (変更なし)
 const pickerStyles = `
 .wheel-picker-container {
   display: flex;
   justify-content: center;
-  /* ★ 修正: 縦位置を中央揃え (「時」のため) */
   align-items: center;
-  gap: 5px; /* From/Toの間隔 */
+  gap: 5px;
 }
 .wheel-picker {
   height: 36px;
-  width: 60px; /* ★ 修正: 幅を縮小 (「時」を外に出すため) */
+  width: 85px;
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   border: 1px solid #718096;
@@ -34,17 +33,13 @@ const pickerStyles = `
   line-height: 36px;
   text-align: center;
   scroll-snap-align: center;
-  font-size: 1.1em; /* ★ 修正: 数字を少し大きく */
-  font-weight: 500;
+  font-size: 0.95em;
 }
 .wheel-picker-item.padding { display: none; }
-
 .wheel-picker-wrapper {
   position: relative;
   height: 36px;
 }
-
-/* ★ 追加: ホバー時の上下矢印 (スクロール可能を示す) */
 .wheel-picker-wrapper::before,
 .wheel-picker-wrapper::after {
   content: '';
@@ -59,22 +54,16 @@ const pickerStyles = `
   pointer-events: none; /* クリックを妨げない */
   z-index: 1;
 }
-
-/* 上矢印 (▲) */
 .wheel-picker-wrapper::before {
   top: 4px;
   border-width: 0 5px 6px 5px;
   border-color: transparent transparent #ecf0f1 transparent;
 }
-
-/* 下矢印 (▼) */
 .wheel-picker-wrapper::after {
   bottom: 4px;
   border-width: 6px 5px 0 5px;
   border-color: #ecf0f1 transparent transparent transparent;
 }
-
-/* ホバー時に矢印を表示 */
 .wheel-picker-wrapper:hover::before,
 .wheel-picker-wrapper:hover::after {
   opacity: 0.7;
@@ -467,7 +456,9 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
     setParams(prev => {
       const thresholdItems = prev.legend.filter(item => item.value !== Infinity);
       const topItem = prev.legend.find(item => item.value === Infinity);
-      const lastThreshold = thresholdItems.length > 0 ? thresholdItems[thresholdItems.length - 1] : { value: 0 };
+
+      const sortedThresholds = [...thresholdItems].sort((a, b) => a.value - b.value);
+      const lastThreshold = sortedThresholds.length > 0 ? sortedThresholds[sortedThresholds.length - 1] : { value: 0 };
 
       const newItem: LegendItem = {
         id: crypto.randomUUID(),
@@ -486,7 +477,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
   const removeLegendItem = (id: string) => {
     setParams(prev => {
       const thresholdItems = prev.legend.filter(item => item.value !== Infinity);
-      // ★ 1点目: しきい値が 0個 または 1個 の場合は削除しない
+      // ★ 1点目: しきい値が1つの場合は削除しない
       if (thresholdItems.length <= 1) {
         return prev;
       }
@@ -521,10 +512,8 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
     Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}`)
   , []);
 
-  // --- ★ 修正: 凡例レンダリングロジック ---
-  // しきい値アイテム (Infinity 以外)
+  // --- 凡例レンダリングロジック ---
   const thresholdItems = useMemo(() => legend.filter(item => item.value !== Infinity), [legend]);
-  // 最上位アイテム (Infinity のもの)
   const topItem = useMemo(() => legend.find(item => item.value === Infinity), [legend]);
 
   return (
@@ -588,7 +577,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
         </div>
       </div>
 
-      {/* --- ★ 修正: 時間帯選択 (「時」を外に出す) --- */}
+      {/* --- 時間帯選択 (「時」を外に出す) --- */}
       <div style={{ margin: '15px 0' }}>
         <h5>対象とする時間帯</h5>
         <div className="wheel-picker-container">
@@ -628,7 +617,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       </div>
       {/* --- ------------------------- --- */}
 
-      {/* --- ★ 修正: 凡例定義 (ロジック分離) --- */}
+      {/* --- 凡例定義 (ロジック分離) --- */}
       <div style={{ marginTop: '15px' }}>
         <h5>凡例定義</h5>
 
@@ -648,6 +637,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
                 onChange={(e) => handleLegendChange(item.id, 'value', Number(e.target.value))}
               />
 
+              {/* ★ 1点目: "Km/h" -> "km/h" */}
               <span className="legend-editor-label">km/h</span>
 
               <PopoverColorPicker
@@ -669,24 +659,14 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
         })}
 
         {/* 最上位アイテムの行 (60~ など) */}
-        {/* ★ 1点目: しきい値が0個の場合、最上位を「0 ~」として表示 */}
         {topItem && (
           <div className="legend-editor-row">
             <span style={{width: '30px', textAlign: 'right', fontSize: '0.9em'}}>
               {thresholdItems.length > 0 ? thresholdItems[thresholdItems.length - 1].value : 0} ~
             </span>
 
-            {/* 1点目: しきい値が0個の場合は input を表示 */}
-            {thresholdItems.length === 0 ? (
-               <input
-                type="number"
-                value={0}
-                disabled // 0固定
-                onChange={() => {}}
-              />
-            ) : (
-              <div style={{width: '60px'}}></div> // スペーサー
-            )}
+            {/* ★ 1点目: しきい値が0個の場合は input を非表示 */}
+            <div style={{width: '60px'}}></div>
 
             <span className="legend-editor-label">km/h</span>
 

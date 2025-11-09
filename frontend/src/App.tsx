@@ -25,8 +25,11 @@ export interface LegendItem {
 
 // すべてのパラメータを管理する型
 interface MosaicParams {
-  startDate: Date | null;
-  endDate: Date | null;
+  // ★ 修正: startDate/endDate を selectedDates に変更
+  // startDate: Date | null;
+  // endDate: Date | null;
+  selectedDates: Date[]; // ★ 追加
+
   timePitch: string;
   date_str: string;
   timeFrom: number;
@@ -43,21 +46,22 @@ function App() {
 
   // サイドバーの全パラメータを管理する State
   const [mosaicParams, setMosaicParams] = useState<MosaicParams>({
-    startDate: new Date(),
-    endDate: null,
+    // ★ 修正: startDate/endDate を selectedDates に変更
+    // startDate: new Date(),
+    // endDate: null,
+    selectedDates: [new Date()], // ★ 追加 (デフォルトで今日を選択)
+
     selectedDays: new Set(['月', '火', '水', '木', '金']),
     timeFrom: 0,
     timeTo: 23,
     timePitch: '60',
     date_str: new Date().toISOString().split('T')[0],
 
-    // 凡例 (3項目 + 最上位1項目)
-    // value: Infinity を持つアイテムが常に最上位の色となります
     legend: [
-      { id: crypto.randomUUID(), value: 20, color: '#FF0000' }, // 0-20
-      { id: crypto.randomUUID(), value: 40, color: '#FFFF00' }, // 20-40
-      { id: crypto.randomUUID(), value: 60, color: '#00FF00' }, // 40-60
-      { id: crypto.randomUUID(), value: Infinity, color: '#008000' }, // 60~ (最上位)
+      { id: crypto.randomUUID(), value: 20, color: '#FF0000' },
+      { id: crypto.randomUUID(), value: 40, color: '#FFFF00' },
+      { id: crypto.randomUUID(), value: 60, color: '#00FF00' },
+      { id: crypto.randomUUID(), value: Infinity, color: '#008000' },
     ],
   });
 
@@ -132,18 +136,15 @@ function App() {
     })
   , [routeData]);
 
-  // getTooltip 関数を useCallback でメモ化
   const getTooltip = useCallback(({object}: any) => {
     return object && object.properties?.name;
   }, []);
 
-  // layers 配列自体を useMemo でメモ化
   const layers = useMemo(() => [routeLayer], [routeLayer]);
 
-  // DeckGLコンポーネントを useMemo でメモ化
   const deckGLChild = useMemo(() => (
     <DeckGL
-      layers={layers} // メモ化された配列を渡す
+      layers={layers}
       getTooltip={getTooltip}
     />
   ), [layers, getTooltip]);
@@ -211,7 +212,7 @@ function App() {
           baseMapKey={baseMapKey}
           onClick={handleMapClick}
         >
-          {deckGLChild} {/* メモ化された子要素を渡す */}
+          {deckGLChild}
         </MapComponent>
       </div>
     </div>
