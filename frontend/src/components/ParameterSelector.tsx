@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import DatePicker from 'react-datepicker';
+import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-// ★ 修正: LuCalendar は不要になったため削除
 import { LuCirclePlus, LuCircleMinus } from 'react-icons/lu';
 import { SketchPicker, ColorResult } from 'react-color';
+
+import { ja } from 'date-fns/locale';
+
+registerLocale('ja', ja);
 
 // App.tsx から LegendItem 型をインポート
 import type { LegendItem } from '../App';
@@ -162,17 +165,20 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
 type DayOfWeek = '月' | '火' | '水' | '木' | '金' | '土' | '日';
 const allDaysOfWeek: DayOfWeek[] = ['月', '火', '水', '木', '金', '土', '日'];
 
-// --- ★ 修正: DatePicker + 凡例エディタ用のCSS (青色テーマ適用) ---
+// --- DatePicker + 凡例エディタ用のCSS ---
 const datePickerStyles = `
-  /* (DatePicker入力欄のスタイルは削除) */
+  /* 1点目: カレンダーラッパーを中央揃え */
+  .datepicker-wrapper {
+    display: flex;
+    justify-content: center;
+  }
 
-  /* ★ 修正: インラインカレンダーのスタイル */
+  /* (カレンダーのダークテーマ対応) */
   .react-datepicker {
     font-size: 0.95em;
     background-color: #2d3748;
     border: none;
     color: #ecf0f1;
-    width: 100%;
   }
   .react-datepicker__header {
     background-color: #2d3748;
@@ -187,25 +193,23 @@ const datePickerStyles = `
     color: #a0aec0;
   }
 
-  /* 1) カレンダーホバー色 */
   .react-datepicker__day:hover {
-    background-color: #4a90e2; /* ★ 修正: 青色ホバー */
+    background-color: #4a90e2;
+    color: #ffffff;
     border-radius: 50%;
   }
 
-  /* 1) カレンダー選択色 (ハイライト) */
   .react-datepicker__day--highlighted {
-    background-color: #2e71cc; /* ★ 修正: 青色の円 */
-    color: #ffffff; /* ★ 修正: 白文字 */
+    background-color: #2e71cc;
+    color: #ffffff;
     border-radius: 50%;
     font-weight: bold;
   }
   .react-datepicker__day--highlighted:hover {
-    background-color: #2760ae; /* ★ 修正: 濃い青色ホバー */
+    background-color: #2760ae;
     color: #ffffff;
   }
 
-  /* (選択範囲のスタイルは不要) */
   .react-datepicker__day--selected,
   .react-datepicker__day--range-start,
   .react-datepicker__day--range-end,
@@ -215,7 +219,7 @@ const datePickerStyles = `
     color: #ecf0f1;
   }
   .react-datepicker__day--highlighted.react-datepicker__day--selected {
-      background-color: #2e71cc; /* ★ 修正: 青色 */
+      background-color: #2e71cc;
       color: #ffffff;
   }
 
@@ -226,9 +230,7 @@ const datePickerStyles = `
     border-color: #ecf0f1;
   }
 
-  /* (From/To のコンテナは不要) */
-
-  /* 2) 曜日ボタン */
+  /* (曜日ボタン関連のスタイルは変更なし) */
   .day-toggle-button {
     padding: 5px 0px;
     font-size: 0.8em;
@@ -237,13 +239,11 @@ const datePickerStyles = `
     color: #ecf0f1; flex-grow: 1; text-align: center; flex-basis: 0;
   }
   .day-toggle-button.selected {
-    background-color: #2e71cc; /* ★ 修正: 青色 */
+    background-color: #2e71cc;
     color: white;
-    border-color: #2e71cc; /* ★ 修正: 青色 */
+    border-color: #2e71cc;
   }
   .day-toggle-button:hover:not(.selected) { background-color: #718096; }
-
-  /* 曜日プリセットボタン */
   .day-preset-buttons {
     display: flex; justify-content: space-between; gap: 3px;
     margin-top: 5px;
@@ -257,7 +257,7 @@ const datePickerStyles = `
     background-color: #a0aec0; color: #2d3748;
   }
 
-  /* 2) 集計時間ピッチボタン */
+  /* (集計時間ピッチボタンは変更なし) */
   .pitch-preset-buttons {
     display: flex;
     justify-content: space-between;
@@ -275,9 +275,9 @@ const datePickerStyles = `
     flex-basis: 0;
   }
   .pitch-preset-buttons button.selected {
-    background-color: #2e71cc; /* ★ 修正: 青色 */
+    background-color: #2e71cc;
     color: white;
-    border-color: #2e71cc; /* ★ 修正: 青色 */
+    border-color: #2e71cc;
   }
   .pitch-preset-buttons button:hover:not(.selected) {
     background-color: #718096;
@@ -393,10 +393,10 @@ const PopoverColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => 
 };
 
 
-// --- ParameterSelector本体 (Props定義の修正) ---
+// --- ParameterSelector本体 ---
 interface ParameterSelectorProps {
   params: {
-    selectedDates: Date[]; // ★ 修正
+    selectedDates: Date[];
     selectedDays: Set<DayOfWeek>;
     timePitch: string;
     timeFrom: number;
@@ -408,7 +408,6 @@ interface ParameterSelectorProps {
 
 const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams }) => {
 
-  // ★ 修正: selectedDates を props から取得
   const { selectedDates, selectedDays, timePitch, timeFrom, timeTo, legend } = params;
 
   // 複数日選択の onChange ハンドラ
@@ -418,7 +417,6 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
     setParams(prev => {
       const newDates = [...prev.selectedDates];
       const dateStr = date.toDateString();
-
       const index = newDates.findIndex(d => d.toDateString() === dateStr);
 
       if (index > -1) {
@@ -498,13 +496,17 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
     else if (preset === 'everyday') { setSelectedDays(() => new Set(allDaysOfWeek)); }
   };
 
-  // ★ 修正: 「時」を削除
   const hourOptions = useMemo(() =>
     Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}`)
   , []);
 
   const thresholdItems = useMemo(() => legend.filter(item => item.value !== Infinity), [legend]);
   const topItem = useMemo(() => legend.find(item => item.value === Infinity), [legend]);
+
+  // 曜日のフォーマット関数
+  const formatWeekDay = (name: string) => {
+    return name.substring(0, 1); // '月'
+  };
 
   return (
     <div>
@@ -514,26 +516,34 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
 
       <h4>2. 対象とする日付・時間帯等の選択</h4>
 
-      {/* ★ 修正: 期間選択 (inlineカレンダーに変更) */}
+      {/* 期間選択 (inlineカレンダーに変更) */}
       <div style={{ marginBottom: '15px' }}>
         <h5 style={{ marginBottom: '5px' }}>
           対象日 <span style={{fontSize: '0.9em', color: '#a0aec0'}}>(複数選択可)</span>
         </h5>
 
-        <DatePicker
-          onChange={handleDateChange}
-          inline // カレンダーを常時表示
-          highlightDates={selectedDates} // 選択済みの日にハイライトを適用
-          selected={selectedDates.length > 0 ? selectedDates[0] : new Date()}
-          // selected (青い丸) が highlight (青の丸) を上書きしないようにする
-          dayClassName={date =>
-            selectedDates.find(d => d.toDateString() === date.toDateString())
-              ? 'react-datepicker__day--highlighted'
-              : undefined
-          }
-        />
+        {/* 1点目: 中央揃えラッパー */}
+        <div className="datepicker-wrapper">
+          <DatePicker
+            onChange={handleDateChange}
+            inline
+            highlightDates={selectedDates}
+            selected={selectedDates.length > 0 ? selectedDates[0] : new Date()}
+            dayClassName={date =>
+              selectedDates.find(d => d.toDateString() === date.toDateString())
+                ? 'react-datepicker__day--highlighted'
+                : undefined
+            }
 
-        {/* 添付画像 (image_63f5a5.png) に合わせたフッター */}
+            // 2点目: 日本語化
+            locale="ja"
+            // ★ 修正: 年月ピッカー(showMonthYearPicker)をやめ、
+            //          ヘッダーのフォーマット(dateFormat="yyyy年MM月")も削除
+            formatWeekDay={formatWeekDay} // 曜日を「月」「火」...
+          />
+        </div>
+
+        {/* フッター */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px' }}>
           <span style={{ fontSize: '0.9em', color: '#a0aec0' }}>
             【指定された日数】 {selectedDates.length} 日分
