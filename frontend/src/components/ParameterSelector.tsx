@@ -7,17 +7,17 @@ import { SketchPicker, ColorResult } from 'react-color';
 // App.tsx から LegendItem 型をインポート
 import type { LegendItem } from '../App';
 
-// ホイールピッカーのスタイル (変更なし)
+// ★ 修正: ホイールピッカーのスタイル
 const pickerStyles = `
 .wheel-picker-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 5px;
+  gap: 5px; /* From/Toの間隔 */
 }
 .wheel-picker {
   height: 36px;
-  width: 85px;
+  width: 60px; /* ★ 修正: 幅を縮小 (「時」を外に出すため) */
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   border: 1px solid #718096;
@@ -33,12 +33,50 @@ const pickerStyles = `
   line-height: 36px;
   text-align: center;
   scroll-snap-align: center;
-  font-size: 0.95em;
+  font-size: 1.1em; /* ★ 修正: 数字を少し大きく */
+  font-weight: 500;
 }
 .wheel-picker-item.padding { display: none; }
-.wheel-picker-wrapper { position: relative; height: 36px; }
+.wheel-picker-wrapper {
+  position: relative;
+  height: 36px;
+}
+
+/* ★ 追加: ホバー時の上下矢印 (スクロール可能を示す) */
 .wheel-picker-wrapper::before,
-.wheel-picker-wrapper::after { display: none; }
+.wheel-picker-wrapper::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-style: solid;
+  opacity: 0; /* 通常は非表示 */
+  transition: opacity 0.2s ease;
+  pointer-events: none; /* クリックを妨げない */
+  z-index: 1;
+}
+
+/* 上矢印 (▲) */
+.wheel-picker-wrapper::before {
+  top: 4px;
+  border-width: 0 5px 6px 5px;
+  border-color: transparent transparent #ecf0f1 transparent;
+}
+
+/* 下矢印 (▼) */
+.wheel-picker-wrapper::after {
+  bottom: 4px;
+  border-width: 6px 5px 0 5px;
+  border-color: #ecf0f1 transparent transparent transparent;
+}
+
+/* ホバー時に矢印を表示 */
+.wheel-picker-wrapper:hover::before,
+.wheel-picker-wrapper:hover::after {
+  opacity: 0.7;
+}
 `;
 
 // --- ホイールピッカーコンポーネント (変更なし) ---
@@ -51,7 +89,6 @@ const itemHeight = 36;
 const loopCount = 3;
 
 const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value, onChange }) => {
-  // ... (コンポーネントの実装は変更なし) ...
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const isScrolling = useRef<boolean>(false);
@@ -65,12 +102,14 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
   }, [originalItems]);
   const middleListStartIndex = n;
   const initialScrollTop = (middleListStartIndex + value) * itemHeight;
+
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = initialScrollTop;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
     if (containerRef.current) {
@@ -85,6 +124,7 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
     }
     return () => { if (timeoutId) { clearTimeout(timeoutId); } };
   }, [value, middleListStartIndex]);
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (isScrolling.current) return;
     if (scrollTimeout.current) { clearTimeout(scrollTimeout.current); }
@@ -102,10 +142,12 @@ const ScrollPicker: React.FC<ScrollPickerProps> = ({ items: originalItems, value
       if (normalizedIndex !== value) { onChange(normalizedIndex); }
     }, 150);
   };
+
   useEffect(() => {
     const currentScrollTimeout = scrollTimeout.current;
     return () => { if (currentScrollTimeout) { clearTimeout(currentScrollTimeout); } };
   }, []);
+
   return (
     <div className="wheel-picker-wrapper">
       <div
@@ -185,33 +227,31 @@ const datePickerStyles = `
     background-color: #a0aec0; color: #2d3748;
   }
 
-  /* --- ★ 追加: 集計時間ピッチボタン --- */
+  /* --- 集計時間ピッチボタン --- */
   .pitch-preset-buttons {
     display: flex;
     justify-content: space-between;
     gap: 4px;
   }
   .pitch-preset-buttons button {
-    flex-grow: 1; /* 均等幅 */
+    flex-grow: 1;
     font-size: 0.9em;
     padding: 6px 2px;
-    background-color: #4a5568; /* 非選択時の色 */
+    background-color: #4a5568;
     color: #ecf0f1;
     border: 1px solid #718096;
     border-radius: 4px;
     cursor: pointer;
-    flex-basis: 0; /* 均等幅 */
+    flex-basis: 0;
   }
   .pitch-preset-buttons button.selected {
-    background-color: #a0aec0; /* 選択時の色 */
+    background-color: #a0aec0;
     color: #2d3748;
     border-color: #a0aec0;
   }
   .pitch-preset-buttons button:hover:not(.selected) {
     background-color: #718096;
   }
-  /* --- --------------------------- --- */
-
 
   /* --- 凡例エディタのスタイル --- */
   .legend-editor-row {
@@ -253,10 +293,7 @@ const datePickerStyles = `
 
   /* カラーピッカーのポップオーバースタイル */
   .legend-color-picker-popover {
-    /* (position は style 属性で 'fixed' として設定) */
     z-index: 10;
-
-    /* (SketchPickerのデフォルトスタイルをダークテーマ用に上書き) */
     .sketch-picker {
       background: #2d3748 !important;
       box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
@@ -340,7 +377,6 @@ const PopoverColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => 
     onChange(colorResult.hex);
   };
 
-  // イベントの伝播を止めるハンドラ
   const stopPropagation = (e: React.SyntheticEvent) => {
     e.stopPropagation();
   };
@@ -364,7 +400,6 @@ const PopoverColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => 
               left: `${pickerPosition.left}px`,
               zIndex: 10
             }}
-            // ポップオーバー自体でイベント伝播を停止
             onClick={stopPropagation}
             onMouseDown={stopPropagation}
             onTouchStart={stopPropagation}
@@ -416,59 +451,39 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
         item.id === id ? { ...item, [field]: newValue } : item
       );
 
-      // value が変更され、かつ、それが最上位アイテム(Infinity)でない場合のみソート
       if (field === 'value' && newValue !== Infinity) {
-        // しきい値アイテム (Infinity以外) をソート
         const thresholdItems = newLegend.filter(item => item.value !== Infinity)
                                       .sort((a, b) => a.value - b.value);
-        // 最上位アイテム (Infinity) を取得
         const topItem = newLegend.find(item => item.value === Infinity);
-
-        // ソート済みのしきい値アイテムと、最上位アイテムを結合して返す
         return { ...prev, legend: topItem ? [...thresholdItems, topItem] : thresholdItems };
       }
-
-      // 色の変更、または最上位アイテムの value 変更 (ありえないが) の場合は、
-      // ソートせずにそのまま返す
       return { ...prev, legend: newLegend };
     });
   };
 
   const addLegendItem = () => {
     setParams(prev => {
-      // 常に「最上位アイテム」(Infinity) の一つ手前に挿入する
       const thresholdItems = prev.legend.filter(item => item.value !== Infinity);
       const topItem = prev.legend.find(item => item.value === Infinity);
-
-      // 最後の「しきい値」アイテムを取得
       const lastThreshold = thresholdItems.length > 0 ? thresholdItems[thresholdItems.length - 1] : { value: 0 };
-
       const newItem: LegendItem = {
         id: crypto.randomUUID(),
         value: (lastThreshold?.value || 0) + 20,
-        // 新しいアイテムの色は、最後の「しきい値」アイテムの色を引き継ぐ
-        // color: lastThreshold?.color || '#ffffff'
-        color: topItem?.color || '#ffffff' // 新しいアイテムの色は、現時点での最上位の色を引き継ぐ
+        color: topItem?.color || '#ffffff'
       };
-
-      // しきい値アイテムと新しいアイテムを結合してソートし、最後に topItem を追加する
       const newThresholdItems = [...thresholdItems, newItem].sort((a, b) => a.value - b.value);
-
       return { ...prev, legend: topItem ? [...newThresholdItems, topItem] : newThresholdItems };
     });
   };
 
   const removeLegendItem = (id: string) => {
     setParams(prev => {
-      // しきい値アイテムが1つより多い場合のみ削除可能
       const thresholdItems = prev.legend.filter(item => item.value !== Infinity);
       if (thresholdItems.length <= 1) {
         return prev; // 最後の1行は削除しない
       }
-
       const topItem = prev.legend.find(item => item.value === Infinity);
       const newThresholdItems = thresholdItems.filter(item => item.id !== id);
-
       return { ...prev, legend: topItem ? [...newThresholdItems, topItem] : newThresholdItems };
     });
   };
@@ -491,14 +506,13 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
     else if (preset === 'everyday') { setSelectedDays(() => new Set(allDaysOfWeek)); }
   };
 
+  // ★ 修正: 「時」を削除
   const hourOptions = useMemo(() =>
-    Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')} 時`)
+    Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}`)
   , []);
 
   // --- 凡例レンダリングロジック ---
-  // しきい値アイテム (Infinity 以外)
   const thresholdItems = useMemo(() => legend.filter(item => item.value !== Infinity), [legend]);
-  // 最上位アイテム (Infinity のもの)
   const topItem = useMemo(() => legend.find(item => item.value === Infinity), [legend]);
 
   return (
@@ -562,7 +576,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
         </div>
       </div>
 
-      {/* --- 時間帯選択 (ホイールピッカー) (変更なし) --- */}
+      {/* --- ★ 修正: 時間帯選択 (「時」を外に出す) --- */}
       <div style={{ margin: '15px 0' }}>
         <h5>対象とする時間帯</h5>
         <div className="wheel-picker-container">
@@ -571,16 +585,21 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
               value={timeFrom}
               onChange={setTimeFrom}
             />
-            <span> 〜 </span>
+            <span style={{ fontSize: '0.95em', marginLeft: '3px' }}>時</span>
+
+            <span style={{ margin: '0 8px' }}> 〜 </span>
+
             <ScrollPicker
               items={hourOptions}
               value={timeTo}
               onChange={setTimeTo}
             />
+            <span style={{ fontSize: '0.95em', marginLeft: '3px' }}>時</span>
         </div>
       </div>
+      {/* --- ----------------------------- --- */}
 
-      {/* --- ★ 修正: 集計時間ピッチ (ボタンに変更) --- */}
+      {/* --- 集計時間ピッチ (ボタンに変更) --- */}
       <div style={{ marginTop: '15px' }}>
         <h5>集計時間ピッチ</h5>
         <div className="pitch-preset-buttons">
@@ -597,11 +616,10 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       </div>
       {/* --- ------------------------- --- */}
 
-      {/* --- 凡例定義 (ロジック分離) --- */}
+      {/* --- 凡例定義 (ロジック分離) (変更なし) --- */}
       <div style={{ marginTop: '15px' }}>
         <h5>凡例定義</h5>
 
-        {/* しきい値アイテムのリスト (0-20, 20-40, 40-60 など) */}
         {thresholdItems.map((item, index) => {
           const prevValue = index === 0 ? 0 : thresholdItems[index - 1].value;
 
@@ -624,7 +642,6 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
                 onChange={(color) => handleLegendChange(item.id, 'color', color)}
               />
 
-              {/* しきい値が1つより多い場合のみ削除ボタンを表示 */}
               {thresholdItems.length > 1 ? (
                 <LuCircleMinus
                   className="legend-editor-button"
@@ -637,7 +654,6 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
           );
         })}
 
-        {/* 最上位アイテムの行 (60~ など) */}
         {topItem && (
           <div className="legend-editor-row">
             <span style={{width: '30px', textAlign: 'right', fontSize: '0.9em'}}>
