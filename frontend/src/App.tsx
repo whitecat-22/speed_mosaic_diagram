@@ -185,7 +185,7 @@ function App() {
         <button onClick={fetchRoute} disabled={clicks.length < 2} style={{width: '100%'}}>
           経路探索を実行
         </button>
-        {routeData && <p style={{color: '#2ecc71', fontWeight: 'bold'}}>✓ 経路探索完了！</p>}
+        {routeData && <p style={{color: '#2e71cc', fontWeight: 'bold'}}>✓ 経路探索完了！</p>}
 
         <hr style={{ borderColor: '#4a5568', opacity: 0.5 }} />
 
