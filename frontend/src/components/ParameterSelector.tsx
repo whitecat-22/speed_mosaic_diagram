@@ -12,6 +12,7 @@ const pickerStyles = `
 .wheel-picker-container {
   display: flex;
   justify-content: center;
+  /* ★ 修正: 縦位置を中央揃え (「時」のため) */
   align-items: center;
   gap: 5px; /* From/Toの間隔 */
 }
@@ -37,6 +38,7 @@ const pickerStyles = `
   font-weight: 500;
 }
 .wheel-picker-item.padding { display: none; }
+
 .wheel-picker-wrapper {
   position: relative;
   height: 36px;
@@ -252,8 +254,10 @@ const datePickerStyles = `
   .pitch-preset-buttons button:hover:not(.selected) {
     background-color: #718096;
   }
+  /* --- --------------------------- --- */
 
-  /* --- 凡例エディタのスタイル --- */
+
+  /* (凡例エディタのスタイルは変更なし) */
   .legend-editor-row {
     display: flex;
     align-items: center;
@@ -290,8 +294,6 @@ const datePickerStyles = `
   .legend-editor-button:hover {
     color: #ecf0f1;
   }
-
-  /* カラーピッカーのポップオーバースタイル */
   .legend-color-picker-popover {
     z-index: 10;
     .sketch-picker {
@@ -466,12 +468,17 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       const thresholdItems = prev.legend.filter(item => item.value !== Infinity);
       const topItem = prev.legend.find(item => item.value === Infinity);
       const lastThreshold = thresholdItems.length > 0 ? thresholdItems[thresholdItems.length - 1] : { value: 0 };
+
       const newItem: LegendItem = {
         id: crypto.randomUUID(),
         value: (lastThreshold?.value || 0) + 20,
+        // ★ 3点目: 常に最上位の色を引き継ぐ
         color: topItem?.color || '#ffffff'
       };
+
+      // ★ 2点目: ソートを追加
       const newThresholdItems = [...thresholdItems, newItem].sort((a, b) => a.value - b.value);
+
       return { ...prev, legend: topItem ? [...newThresholdItems, topItem] : newThresholdItems };
     });
   };
@@ -479,11 +486,14 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
   const removeLegendItem = (id: string) => {
     setParams(prev => {
       const thresholdItems = prev.legend.filter(item => item.value !== Infinity);
+      // ★ 1点目: しきい値が 0個 または 1個 の場合は削除しない
       if (thresholdItems.length <= 1) {
-        return prev; // 最後の1行は削除しない
+        return prev;
       }
+
       const topItem = prev.legend.find(item => item.value === Infinity);
       const newThresholdItems = thresholdItems.filter(item => item.id !== id);
+
       return { ...prev, legend: topItem ? [...newThresholdItems, topItem] : newThresholdItems };
     });
   };
@@ -511,8 +521,10 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
     Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}`)
   , []);
 
-  // --- 凡例レンダリングロジック ---
+  // --- ★ 修正: 凡例レンダリングロジック ---
+  // しきい値アイテム (Infinity 以外)
   const thresholdItems = useMemo(() => legend.filter(item => item.value !== Infinity), [legend]);
+  // 最上位アイテム (Infinity のもの)
   const topItem = useMemo(() => legend.find(item => item.value === Infinity), [legend]);
 
   return (
@@ -616,10 +628,11 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
       </div>
       {/* --- ------------------------- --- */}
 
-      {/* --- 凡例定義 (ロジック分離) (変更なし) --- */}
+      {/* --- ★ 修正: 凡例定義 (ロジック分離) --- */}
       <div style={{ marginTop: '15px' }}>
         <h5>凡例定義</h5>
 
+        {/* しきい値アイテムのリスト (0-20, 20-40, 40-60 など) */}
         {thresholdItems.map((item, index) => {
           const prevValue = index === 0 ? 0 : thresholdItems[index - 1].value;
 
@@ -642,6 +655,7 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
                 onChange={(color) => handleLegendChange(item.id, 'color', color)}
               />
 
+              {/* ★ 1点目: しきい値が1つより多い場合のみ削除ボタンを表示 */}
               {thresholdItems.length > 1 ? (
                 <LuCircleMinus
                   className="legend-editor-button"
@@ -654,12 +668,26 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
           );
         })}
 
+        {/* 最上位アイテムの行 (60~ など) */}
+        {/* ★ 1点目: しきい値が0個の場合、最上位を「0 ~」として表示 */}
         {topItem && (
           <div className="legend-editor-row">
             <span style={{width: '30px', textAlign: 'right', fontSize: '0.9em'}}>
               {thresholdItems.length > 0 ? thresholdItems[thresholdItems.length - 1].value : 0} ~
             </span>
-            <div style={{width: '60px'}}></div> {/* スペーサー */}
+
+            {/* 1点目: しきい値が0個の場合は input を表示 */}
+            {thresholdItems.length === 0 ? (
+               <input
+                type="number"
+                value={0}
+                disabled // 0固定
+                onChange={() => {}}
+              />
+            ) : (
+              <div style={{width: '60px'}}></div> // スペーサー
+            )}
+
             <span className="legend-editor-label">km/h</span>
 
             <PopoverColorPicker
@@ -667,7 +695,8 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
               onChange={(color) => handleLegendChange(topItem.id, 'color', color)}
             />
 
-            <div style={{width: '1.2em'}}></div> {/* スペーサー */}
+            {/* ★ 1点目: 最後の1行は削除ボタンを表示しない */}
+            <div style={{width: '1.2em'}}></div>
           </div>
         )}
 
