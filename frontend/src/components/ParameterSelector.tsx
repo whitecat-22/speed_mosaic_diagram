@@ -185,6 +185,34 @@ const datePickerStyles = `
     background-color: #a0aec0; color: #2d3748;
   }
 
+  /* --- ★ 追加: 集計時間ピッチボタン --- */
+  .pitch-preset-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+  }
+  .pitch-preset-buttons button {
+    flex-grow: 1; /* 均等幅 */
+    font-size: 0.9em;
+    padding: 6px 2px;
+    background-color: #4a5568; /* 非選択時の色 */
+    color: #ecf0f1;
+    border: 1px solid #718096;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-basis: 0; /* 均等幅 */
+  }
+  .pitch-preset-buttons button.selected {
+    background-color: #a0aec0; /* 選択時の色 */
+    color: #2d3748;
+    border-color: #a0aec0;
+  }
+  .pitch-preset-buttons button:hover:not(.selected) {
+    background-color: #718096;
+  }
+  /* --- --------------------------- --- */
+
+
   /* --- 凡例エディタのスタイル --- */
   .legend-editor-row {
     display: flex;
@@ -552,26 +580,19 @@ const ParameterSelector: React.FC<ParameterSelectorProps> = ({ params, setParams
         </div>
       </div>
 
-      {/* --- 集計時間ピッチ (中央揃え) (変更なし) --- */}
+      {/* --- ★ 修正: 集計時間ピッチ (ボタンに変更) --- */}
       <div style={{ marginTop: '15px' }}>
         <h5>集計時間ピッチ</h5>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ display: 'inline-block', textAlign: 'left' }}>
-            {['15', '30', '60'].map((pitch) => (
-              <div key={pitch} style={{ padding: '2px 0' }}>
-                <label>
-                  <input
-                    type="radio"
-                    name="pitch"
-                    value={pitch}
-                    checked={timePitch === pitch}
-                    onChange={(e) => setTimePitch(e.target.value)}
-                  />
-                  {pitch}分
-                </label>
-              </div>
-            ))}
-          </div>
+        <div className="pitch-preset-buttons">
+          {['15', '30', '60'].map((pitch) => (
+            <button
+              key={pitch}
+              className={timePitch === pitch ? 'selected' : ''}
+              onClick={() => setTimePitch(pitch)}
+            >
+              {pitch}分
+            </button>
+          ))}
         </div>
       </div>
       {/* --- ------------------------- --- */}
